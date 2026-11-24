@@ -971,8 +971,17 @@ async function submitVote(event){
                     return { status:"removed" };
 
                 const round = game.round;
+                const voteRoundIds = getVoteRoundIds(round);
+                const voteRoundRef =
+                doc(
+                    db,
+                    "games",
+                    votingGameCode,
+                    "votes",
+                    voteRoundIds[0]
+                );
                 const voteRefs =
-                    getVoteRoundIds(round).map(roundId=>
+                    voteRoundIds.map(roundId=>
                         doc(
                             db,
                             "games",
@@ -989,6 +998,12 @@ async function submitVote(event){
                             transaction.get(voteRef)
                         )
                     );
+
+                transaction.set(
+                    voteRoundRef,
+                    { round },
+                    { merge:true }
+                );
 
                 transaction.set(
                     voteRefs[0],

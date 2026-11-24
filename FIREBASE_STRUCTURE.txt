@@ -1,0 +1,102 @@
+FIREBASE DATA STRUCTURE
+=======================
+
+Firebase initialization
+-----------------------
+The shared Firestore instance is initialized in firebase.js. Both host.html
+and team.html import this database instance. Use the same Firebase project
+when inspecting data in the Firebase console.
+
+Top-level layout
+----------------
+
+games (collection)
+  {gameCode} (document)
+    round: number
+    votingOpen: boolean
+    roundComplete: boolean
+
+    teams (subcollection)
+      {teamId} (document)
+        name: display name
+        normalizedName: normalized name used for duplicate checks
+        score: current score
+
+    teamNames (subcollection)
+      {encodedName} (document)
+        teamId: ID of the corresponding teams document
+        name: display name
+
+    votes (subcollection)
+      round01 (document; round marker, created when a new vote is submitted)
+        round: 1
+        teams (subcollection)
+          {teamId} (document)
+            teamId: team ID
+            teamName: display name at time of voting
+            choice: selected expedition
+            round: round number
+            timestamp: milliseconds since epoch
+
+    results (subcollection)
+      round1_{teamId} (document)
+        round: round number
+        teamId: team ID
+        teamName: display name recorded for the result
+        choice: selected expedition
+        delta: points earned or lost
+        score: team score after this result
+        timestamp: milliseconds since epoch
+
+Collection purposes
+-------------------
+teams
+  The authoritative team records. The host roster and scores use this
+  collection. Votes and results refer to these documents by teamId.
+
+teamNames
+  A name reservation/index, not the team roster. Its document ID is based on
+  the team's NFKC-normalized, lowercase, URL-encoded name. A join transaction
+  creates the reservation and the teams document together, preventing two
+  teams in the same game from claiming the same normalized name.
+
+votes
+  Stores each team's current vote for each round. A team can update its vote
+  while voting is open; the team's document is overwritten with the latest
+  choice and timestamp. The round document is explicitly written as a marker
+  so the hierarchy is visible and navigable in the Firebase console.
+
+results
+  Stores the logged outcome for each team in each round. Results are separate
+  from votes and are used for score/history displays. Result document IDs
+  retain the unpadded format, such as round1_{teamId}; the document's round
+  field is numeric.
+
+Round IDs and compatibility
+---------------------------
+New vote writes use zero-padded IDs: round01 through round09, then round10
+onward. For example, a round 2 vote is at:
+
+  games/{gameCode}/votes/round02/teams/{teamId}
+
+Reads check both the padded path and the legacy unpadded path for single-digit
+rounds (for example, round02 and round2). If both versions exist for a team,
+the document with the newer timestamp wins; ties favor the padded path.
+Existing legacy vote documents are not migrated or deleted by this
+compatibility behavior.
+
+Round processing and cleanup
+-----------------------------
+Running a round reads votes from the padded and legacy paths, selects at most
+one latest vote per team, updates each team's score, and writes a result
+document. Closing a round does not delete vote documents.
+
+Removing a team deletes its team document, its name reservation, its votes,
+and its results. Deleting a game removes its teams, team-name reservations,
+votes, results, and the game document.
+
+Firebase console navigation
+----------------------------
+To inspect a vote, open games, select the game document, then open votes,
+the round document (for example round02), and its teams subcollection. The
+team document ID is the same teamId used under games/{gameCode}/teams.
