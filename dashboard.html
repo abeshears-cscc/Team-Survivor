@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Statistics Survivor Dashboard</title>
+
+<style>
+body{
+    font-family: Arial, sans-serif;
+    max-width:1200px;
+    margin:0 auto;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+h1{
+    color:#002E5D;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+input{
+    padding:10px;
+    font-size:16px;
+    width:250px;
+}
+
+button{
+    padding:10px 20px;
+    font-size:16px;
+    cursor:pointer;
+    background:#00B140;
+    color:white;
+    border:none;
+    border-radius:5px;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns: repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+}
+
+.stat{
+    background:#002E5D;
+    color:white;
+    padding:20px;
+    border-radius:8px;
+    text-align:center;
+}
+
+.team{
+    padding:12px;
+    margin:8px 0;
+    border-left:5px solid #00B140;
+    background:#fafafa;
+}
+
+.team-name{
+    font-weight:bold;
+}
+
+.empty{
+    color:#777;
+}
+</style>
+</head>
+<body>
+
+<h1>Statistics Survivor Dashboard</h1>
+
+<div class="card">
+
+    <h2>Load Game</h2>
+
+    <input
+        id="gameCode"
+        value="testgame"
+        placeholder="Game Code">
+
+    <button id="loadBtn">
+        Load Game
+    </button>
+
+</div>
+
+<div class="stats">
+
+    <div class="stat">
+        <h3>Teams Joined</h3>
+        <div id="teamCount">0</div>
+    </div>
+
+    <div class="stat">
+        <h3>Average Score</h3>
+        <div id="avgScore">100</div>
+    </div>
+
+    <div class="stat">
+        <h3>Current Round</h3>
+        <div id="roundNumber">1</div>
+    </div>
+
+</div>
+
+<div class="card">
+
+    <h2>Registered Teams</h2>
+
+    <div id="teamsContainer" class="empty">
+        No teams joined yet.
+    </div>
+
+</div>
+
+<script type="module">
+
+import { db } from "./firebase.js";
+
+import {
+    collection,
+    doc,
+    onSnapshot,
+    getDoc
+} from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+let unsubscribeTeams = null;
+
+document
+    .getElementById("loadBtn")
+    .addEventListener("click", loadGame);
+
+loadGame();
+
+async function loadGame(){
+
+    const gameCode =
+        document.getElementById("gameCode")
+        .value.trim();
+
+    if(!gameCode) return;
+
+    if(unsubscribeTeams){
+        unsubscribeTeams();
+    }
+
+    const gameDoc =
+        await getDoc(
+            doc(db,"games",gameCode)
+        );
+
+    if(!gameDoc.exists()){
+
+        document
+            .getElementById("teamsContainer")
+            .innerHTML =
+            "<div class='empty'>Game not found.</div>";
+
+        return;
+    }
+
+    const gameData = gameDoc.data();
+
+    document
+        .getElementById("roundNumber")
+        .innerText =
+        gameData.round || 1;
+
+    unsubscribeTeams =
+        onSnapshot(
+
+            collection(
+                db,
+                "games",
+                gameCode,
+                "teams"
+            ),
+
+            snapshot => {
+
+                const teamsDiv =
+                    document.getElementById(
+                        "teamsContainer"
+                    );
+
+                if(snapshot.empty){
+
+                    teamsDiv.innerHTML =
+                        "<div class='empty'>No teams joined yet.</div>";
+
+                    document.getElementById(
+                        "teamCount"
+                    ).innerText = 0;
+
+                    return;
+                }
+
+                let html = "";
+
+                let totalScore = 0;
+
+                snapshot.forEach(teamDoc => {
+
+                    const team =
+                        teamDoc.data();
+
+                    totalScore +=
+                        team.score || 0;
+
+                    html += `
+                    <div class="team">
+
+                        <div class="team-name">
+                            ${team.name}
+                        </div>
+
+                        <div>
+                            Score:
+                            ${team.score ?? 100}
+                        </div>
+
+                    </div>
+                    `;
+                });
+
+                teamsDiv.innerHTML = html;
+
+                document
+                    .getElementById("teamCount")
+                    .innerText =
+                    snapshot.size;
+
+                document
+                    .getElementById("avgScore")
+                    .innerText =
+                    (
+                        totalScore /
+                        snapshot.size
+                    ).toFixed(1);
+            }
+        );
+}
+
+</script>
+
+</body>
+</html>

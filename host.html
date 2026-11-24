@@ -1,0 +1,2203 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Statistics Survivor Host</title>
+
+<style>
+
+body{
+    font-family:Arial,sans-serif;
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+h1{
+    color:#002E5D;
+}
+
+.page-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:20px;
+}
+
+.page-header h1{
+    margin:0;
+}
+
+.loaded-game-name{
+    display:inline-block;
+    color:#555;
+    font-size:.75em;
+    font-weight:normal;
+    overflow-wrap:anywhere;
+}
+
+.gear-button{
+    display:grid;
+    flex:0 0 48px;
+    width:48px;
+    height:48px;
+    place-items:center;
+    padding:0;
+    background:#002E5D;
+    color:white;
+    font-size:26px;
+    line-height:1;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+input{
+    padding:10px;
+    width:250px;
+    max-width:100%;
+    font-size:16px;
+}
+
+button{
+    padding:12px 20px;
+    margin:5px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+button:disabled{
+    cursor:not-allowed;
+    opacity:.6;
+}
+
+.primary{
+    background:#00B140;
+    color:white;
+}
+
+.secondary{
+    background:#002E5D;
+    color:white;
+}
+
+.danger{
+    background:#C62828;
+    color:white;
+}
+
+.stats{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:15px;
+    margin-bottom:20px;
+}
+
+.stat{
+    background:#002E5D;
+    color:white;
+    padding:20px;
+    border-radius:8px;
+    text-align:center;
+}
+
+.stat h2{
+    margin-top:0;
+    font-size:1.1rem;
+}
+
+.stat-value{
+    font-size:1.8rem;
+    font-weight:bold;
+}
+
+.team{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+    padding:12px;
+    margin:8px 0;
+    border-left:5px solid #00B140;
+    background:#fafafa;
+}
+
+.team-panel-heading{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+}
+
+.team-panel-heading h2{
+    margin-top:0;
+}
+
+.team-panel-actions{
+    display:flex;
+    align-items:center;
+    gap:8px;
+}
+
+.team-view-toggle{
+    margin:0;
+    padding:10px 12px;
+    font-size:14px;
+}
+
+.team-score-chart{
+    max-height:480px;
+    overflow-y:auto;
+}
+
+.team-score-row{
+    display:grid;
+    grid-template-columns:minmax(90px,1fr) minmax(100px,2fr) 64px;
+    align-items:center;
+    gap:12px;
+    padding:10px 4px;
+    border-bottom:1px solid #e5e5e5;
+}
+
+.team-score-name{
+    overflow-wrap:anywhere;
+    font-weight:bold;
+}
+
+.team-average-winnings,
+.team-score-average{
+    display:block;
+    color:#555;
+    font-size:.85rem;
+    font-weight:normal;
+}
+
+.team-score-label{
+    min-width:0;
+}
+
+.team-score-track{
+    position:relative;
+    height:18px;
+    border-radius:4px;
+    background:#f0f0f0;
+}
+
+.team-score-track::before{
+    position:absolute;
+    top:-3px;
+    bottom:-3px;
+    left:var(--zero-position);
+    width:2px;
+    background:#777;
+    content:"";
+}
+
+.team-score-bar{
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:var(--bar-left);
+    width:var(--bar-width);
+    border-radius:4px;
+    background:#00B140;
+}
+
+.team-score-bar.negative{
+    background:#C62828;
+}
+
+.team-score-value{
+    text-align:right;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.team-remove-button{
+    flex-shrink:0;
+}
+
+.team-name{
+    font-weight:bold;
+}
+
+.team-score-trend{
+    display:inline-block;
+    margin-left:6px;
+    font-size:.9em;
+    font-weight:bold;
+    line-height:1;
+    vertical-align:middle;
+}
+
+.team-score-trend-up{
+    color:#00B140;
+}
+
+.team-score-trend-down{
+    color:#C62828;
+}
+
+.team-id{
+    display:block;
+    color:#666;
+    font-size:.8rem;
+}
+
+.vote-progress-section{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin:16px 0;
+}
+
+.vote-progress-section p{
+    min-width:0;
+    flex:1;
+}
+
+.vote-progress-dial{
+    --vote-progress:0%;
+    display:grid;
+    flex:0 0 116px;
+    width:116px;
+    height:116px;
+    place-items:center;
+    border-radius:50%;
+    background:conic-gradient(#00B140 var(--vote-progress),#e5e5e5 0);
+    transition:background .2s ease;
+}
+
+.vote-progress-inner{
+    display:flex;
+    width:88px;
+    height:88px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:white;
+    text-align:center;
+}
+
+.vote-progress-percent{
+    color:#002E5D;
+    font-size:1.5rem;
+    font-weight:bold;
+}
+
+.vote-progress-count{
+    color:#555;
+    font-size:.8rem;
+}
+
+.result{
+    margin-bottom:10px;
+    padding:10px;
+    background:#f2f2f2;
+}
+
+.result-round{
+    margin-bottom:10px;
+    border:1px solid #ddd;
+    border-radius:6px;
+    background:white;
+}
+
+.result-round summary{
+    padding:12px;
+    border-radius:6px;
+    background:#f2f2f2;
+    cursor:pointer;
+    font-weight:bold;
+}
+
+.result-round[open] summary{
+    border-bottom:1px solid #ddd;
+    border-radius:6px 6px 0 0;
+}
+
+.result-round-entries{
+    padding:10px;
+}
+
+.result-round-entries .result:last-child{
+    margin-bottom:0;
+}
+
+.choice-average-section{
+    margin-bottom:18px;
+}
+
+.choice-average-section h3{
+    margin-top:0;
+}
+
+.choice-average-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+}
+
+.choice-average{
+    padding:14px;
+    border-radius:8px;
+    background:#f2f2f2;
+    text-align:center;
+}
+
+.choice-average h4{
+    margin:0 0 8px;
+    color:#002E5D;
+}
+
+.choice-average-value{
+    font-size:1.35rem;
+    font-weight:bold;
+}
+
+.choice-average-value.positive{
+    color:#008c33;
+}
+
+.choice-average-value.negative{
+    color:#C62828;
+}
+
+.choice-average-count{
+    margin-top:4px;
+    color:#555;
+    font-size:.85rem;
+}
+
+.empty{
+    color:#777;
+}
+
+dialog{
+    width:min(760px,calc(100% - 32px));
+    max-height:85vh;
+    padding:24px;
+    border:0;
+    border-radius:10px;
+    box-shadow:0 8px 30px rgba(0,0,0,.3);
+}
+
+dialog::backdrop{
+    background:rgba(0,0,0,.55);
+}
+
+.dialog-header,
+.game-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+}
+
+.dialog-header h2{
+    margin:0;
+}
+
+.dialog-close-button{
+    width:40px;
+    height:40px;
+    padding:0;
+    margin:0;
+    border:1px solid #777;
+    border-radius:2px;
+    background:#f0f0f0;
+    color:#111;
+    font-size:24px;
+}
+
+.dialog-close-button:hover{
+    background:#e5e5e5;
+}
+
+.game-row{
+    padding:14px 0;
+    border-bottom:1px solid #ddd;
+}
+
+.game-row.current-game{
+    padding-right:10px;
+    padding-left:10px;
+    background:#eff8f1;
+    border-left:4px solid #00B140;
+}
+
+.current-badge{
+    display:inline-block;
+    margin-left:8px;
+    padding:3px 8px;
+    border-radius:12px;
+    background:#d8f0df;
+    color:#145c2a;
+    font-size:.8rem;
+    font-weight:bold;
+}
+
+.game-details{
+    overflow-wrap:anywhere;
+}
+
+.game-actions{
+    flex-shrink:0;
+}
+
+.dialog-status{
+    min-height:1.5em;
+}
+
+@media(max-width:600px){
+    .dialog-header,
+    .game-row{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .team-panel-heading{
+        align-items:flex-start;
+        flex-direction:column;
+    }
+
+    .team-panel-actions{
+        width:100%;
+        justify-content:flex-end;
+    }
+
+    .team-score-row{
+        grid-template-columns:minmax(72px,1fr) minmax(72px,1.4fr) 52px;
+        gap:8px;
+        font-size:.9rem;
+    }
+
+    .game-actions{
+        width:100%;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<header class="page-header">
+    <h1>Statistics Survivor Host<span id="activeGameName"
+                                     class="loaded-game-name"></span></h1>
+    <button id="manageGamesBtn"
+            class="gear-button"
+            type="button"
+            aria-label="Manage games"
+            title="Manage games">⚙</button>
+</header>
+
+<dialog id="gameManagementDialog"
+        aria-labelledby="gameManagementTitle">
+
+    <div class="dialog-header">
+        <h2 id="gameManagementTitle">Game Management</h2>
+        <button id="closeGameManagementBtn"
+                class="dialog-close-button"
+                type="button"
+                aria-label="Close dialog"
+                title="Close dialog">×</button>
+    </div>
+
+    <div class="card">
+        <h3>Create a New Game</h3>
+        <label for="newGameCode">Game code</label>
+        <input id="newGameCode"
+               placeholder="Enter a unique game code">
+        <button id="createGameBtn"
+                class="primary"
+                type="button">Create Game</button>
+    </div>
+
+    <p id="gameManagementStatus"
+       class="dialog-status"
+       role="status"></p>
+
+    <h3>Existing Games</h3>
+    <div id="gameList"
+         class="empty">Loading games...</div>
+
+</dialog>
+
+<div class="card">
+
+    <h2>Game Controls</h2>
+    <div class="vote-progress-section">
+        <div id="voteProgressDial"
+             class="vote-progress-dial"
+             role="progressbar"
+             aria-label="Teams that have voted in the current round"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             aria-valuenow="0"
+             aria-valuetext="No game loaded">
+            <div class="vote-progress-inner">
+                <span id="voteProgressPercent"
+                      class="vote-progress-percent">0%</span>
+                <span id="voteProgressCount"
+                      class="vote-progress-count">0/0 teams</span>
+            </div>
+        </div>
+        <p id="voteProgressStatus"
+           class="empty"
+           role="status">Load a game to see vote progress.</p>
+    </div>
+
+    <button
+        class="primary"
+        id="openVotingBtn"
+        disabled>
+        Open Voting
+    </button>
+
+    <button
+        class="danger"
+        id="closeVotingBtn"
+        disabled>
+        Close Voting
+    </button>
+
+    <button
+        class="secondary"
+        id="runRoundBtn"
+        disabled>
+        Run Round
+    </button>
+
+    <button
+        class="secondary"
+        id="advanceRoundBtn"
+        disabled>
+        Advance Round
+    </button>
+
+</div>
+
+<div class="stats">
+
+    <div class="stat">
+        <h2>Teams Joined</h2>
+        <div id="teamCount" class="stat-value">0</div>
+    </div>
+
+    <div class="stat">
+        <h2>Average Score</h2>
+        <div id="avgScore" class="stat-value">0</div>
+    </div>
+
+    <div class="stat">
+        <h2>Current Round</h2>
+        <div id="roundNumber" class="stat-value">-</div>
+    </div>
+
+</div>
+
+<div class="card">
+
+    <div class="team-panel-heading">
+        <h2>Registered Teams</h2>
+        <div class="team-panel-actions">
+            <button id="toggleTeamViewBtn"
+                    class="secondary team-view-toggle"
+                    type="button"
+                    aria-pressed="false">Show chart</button>
+            <button id="manageTeamsBtn"
+                    class="gear-button"
+                    type="button"
+                    disabled
+                    aria-label="Manage registered teams"
+                    aria-pressed="false"
+                    title="Manage registered teams">⚙</button>
+        </div>
+    </div>
+    <p id="teamManagementStatus"
+       class="empty"
+       hidden></p>
+    <div id="teams" class="empty">No teams joined yet.</div>
+    <div id="teamChart"
+         class="team-score-chart"
+         role="list"
+         aria-label="Team scores"
+         hidden></div>
+
+</div>
+
+<div class="card">
+
+    <h2>Logged Round Results</h2>
+    <div class="choice-average-section">
+        <h3>Average points per choice</h3>
+        <div id="choiceAverageStats"
+             class="choice-average-grid"
+             role="group"
+             aria-label="Average points by team choice"
+             aria-live="polite">
+            <div class="choice-average">
+                <h4>Safe</h4>
+                <div id="safeAverage"
+                     class="choice-average-value">—</div>
+                <div id="safeAverageCount"
+                     class="choice-average-count">No logged outcomes</div>
+            </div>
+            <div class="choice-average">
+                <h4>Explorer</h4>
+                <div id="explorerAverage"
+                     class="choice-average-value">—</div>
+                <div id="explorerAverageCount"
+                     class="choice-average-count">No logged outcomes</div>
+            </div>
+            <div class="choice-average">
+                <h4>Treasure</h4>
+                <div id="treasureAverage"
+                     class="choice-average-value">—</div>
+                <div id="treasureAverageCount"
+                     class="choice-average-count">No logged outcomes</div>
+            </div>
+        </div>
+    </div>
+    <div id="results" class="empty">No round results logged yet.</div>
+
+</div>
+
+<script type="module">
+
+import { db }
+from "./firebase.js";
+
+import {
+    collection,
+    deleteDoc,
+    doc,
+    getDoc,
+    getDocs,
+    onSnapshot,
+    runTransaction,
+    updateDoc,
+    writeBatch
+}
+from "https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+let currentGame = null;
+let currentTeams = [];
+let currentResults = [];
+let teamWinningsStats = new Map();
+let latestWinningsByTeam = new Map();
+let teamChartVisible = false;
+let currentRound = null;
+let currentRoundVotes = new Set();
+let unsubscribeLegacyRoundVotes = null;
+let teamManagementMode = false;
+let gameLoaded = false;
+let votingOpen = false;
+let roundComplete = false;
+let runningRound = false;
+let advancingRound = false;
+let unsubscribeGame = null;
+let unsubscribeTeams = null;
+let unsubscribeRoundVotes = null;
+let unsubscribeResults = null;
+let loadRequest = 0;
+let unsubscribeGameList = null;
+let gameCountUnsubscribers = [];
+let gameListVersion = 0;
+let roundVotesLoaded = false;
+let voteProgressError = null;
+
+const EXPEDITIONS = {
+    Safe: {
+        points: 8
+    },
+    Explorer: {
+        success: .60,
+        win: 18,
+        lose: -8
+    },
+    Treasure: {
+        success: .15,
+        win: 60,
+        lose: -12
+    }
+};
+
+document
+.getElementById("manageGamesBtn")
+.addEventListener("click", openGameManagement);
+
+document
+.getElementById("closeGameManagementBtn")
+.addEventListener("click", closeGameManagement);
+
+document
+.getElementById("createGameBtn")
+.addEventListener("click", createGame);
+
+document
+.getElementById("gameManagementDialog")
+.addEventListener("close", stopGameListListeners);
+
+document
+.getElementById("openVotingBtn")
+.addEventListener("click", openVoting);
+
+document
+.getElementById("closeVotingBtn")
+.addEventListener("click", closeVoting);
+
+document
+.getElementById("runRoundBtn")
+.addEventListener("click", runRound);
+
+document
+.getElementById("advanceRoundBtn")
+.addEventListener("click", advanceRound);
+
+document
+.getElementById("manageTeamsBtn")
+.addEventListener("click", toggleTeamManagement);
+
+document
+.getElementById("toggleTeamViewBtn")
+.addEventListener("click", toggleTeamView);
+
+function getVoteRoundIds(round){
+
+    const paddedRoundId =
+        `round${String(round).padStart(2, "0")}`;
+    const legacyRoundId = `round${round}`;
+
+    return paddedRoundId === legacyRoundId
+        ? [paddedRoundId]
+        : [paddedRoundId, legacyRoundId];
+}
+
+function setStatus(message){
+   // document.getElementById("status").textContent = message;
+}
+
+function setManagementStatus(message){
+    document.getElementById("gameManagementStatus").textContent = message;
+}
+
+function setGameControlsEnabled(enabled){
+    gameLoaded = enabled;
+    updateGameControls();
+}
+
+function updateGameControls(){
+    const operationInProgress = runningRound || advancingRound;
+
+    document.getElementById("openVotingBtn").disabled =
+        !gameLoaded || votingOpen || roundComplete || operationInProgress;
+    document.getElementById("closeVotingBtn").disabled =
+        !gameLoaded || !votingOpen || roundComplete || operationInProgress;
+    document.getElementById("runRoundBtn").disabled =
+        !gameLoaded || roundComplete || operationInProgress;
+    document.getElementById("advanceRoundBtn").disabled =
+        !gameLoaded || !roundComplete || operationInProgress;
+    document.getElementById("manageTeamsBtn").disabled =
+        !gameLoaded || operationInProgress;
+    document.getElementById("toggleTeamViewBtn").disabled =
+        !gameLoaded || operationInProgress || teamManagementMode;
+    document.getElementById("manageGamesBtn").disabled =
+        operationInProgress;
+}
+
+function stopListeners(){
+    unsubscribeGame?.();
+    unsubscribeTeams?.();
+    unsubscribeRoundVotes?.();
+    unsubscribeLegacyRoundVotes?.();
+    unsubscribeResults?.();
+
+    unsubscribeGame = null;
+    unsubscribeTeams = null;
+    unsubscribeRoundVotes = null;
+    unsubscribeLegacyRoundVotes = null;
+    unsubscribeResults = null;
+    currentRound = null;
+    currentRoundVotes = new Set();
+    roundVotesLoaded = false;
+    voteProgressError = null;
+}
+
+function clearGameDisplay(){
+    currentTeams = [];
+    currentResults = [];
+    teamWinningsStats = new Map();
+    latestWinningsByTeam = new Map();
+    updateVoteProgress();
+    teamManagementMode = false;
+    votingOpen = false;
+    roundComplete = false;
+    document.getElementById("teamCount").textContent = "0";
+    document.getElementById("avgScore").textContent = "0";
+    document.getElementById("roundNumber").textContent = "-";
+    document.getElementById("teamManagementStatus").hidden = true;
+    document.getElementById("teamManagementStatus").textContent = "";
+    document.getElementById("manageTeamsBtn")
+        .setAttribute("aria-pressed", "false");
+    document.getElementById("manageTeamsBtn").title =
+        "Manage registered teams";
+    renderTeams(currentTeams);
+    renderChoiceAverages(currentResults);
+    renderResults(currentResults);
+}
+
+function openGameManagement(){
+
+    document
+    .getElementById("gameManagementDialog")
+    .showModal();
+
+    watchGames();
+}
+
+function closeGameManagement(){
+    document.getElementById("gameManagementDialog").close();
+}
+
+function stopGameListListeners(){
+
+    unsubscribeGameList?.();
+    unsubscribeGameList = null;
+
+    gameCountUnsubscribers.forEach(unsubscribe=>unsubscribe());
+    gameCountUnsubscribers = [];
+    gameListVersion++;
+}
+
+function watchGames(){
+
+    stopGameListListeners();
+
+    unsubscribeGameList =
+    onSnapshot(
+        collection(db, "games"),
+        snapshot=>{
+            if(!document.getElementById("gameManagementDialog").open)
+                return;
+
+            renderGameList(snapshot.docs);
+        },
+        error=>{
+            setManagementStatus(
+                `Unable to load games: ${error.message}`
+            );
+        }
+    );
+}
+
+function renderGameList(gameDocs){
+
+    gameCountUnsubscribers.forEach(unsubscribe=>unsubscribe());
+    gameCountUnsubscribers = [];
+    const version = ++gameListVersion;
+    const gameList = document.getElementById("gameList");
+
+    gameList.replaceChildren();
+
+    if(gameDocs.length === 0){
+        gameList.textContent = "No games created yet.";
+        return;
+    }
+
+    gameDocs
+    .slice()
+    .sort((a, b)=>a.id.localeCompare(b.id))
+    .forEach(gameDoc=>{
+
+        const game = gameDoc.data();
+        const row = document.createElement("div");
+        const details = document.createElement("div");
+        const name = document.createElement("strong");
+        const currentBadge = document.createElement("span");
+        const status = document.createElement("div");
+        const teamCount = document.createElement("div");
+        const actions = document.createElement("div");
+        const loadButton = document.createElement("button");
+        const deleteButton = document.createElement("button");
+
+        row.className = "game-row";
+        details.className = "game-details";
+        status.className = "empty";
+        teamCount.className = "empty";
+        actions.className = "game-actions";
+        name.textContent = gameDoc.id;
+        if(gameDoc.id === currentGame){
+            row.classList.add("current-game");
+            row.setAttribute("aria-current", "true");
+            currentBadge.className = "current-badge";
+            currentBadge.textContent = "Current game";
+        }
+        status.textContent =
+            `Round ${game.round ?? 1} · Voting ` +
+            `${game.votingOpen === true ? "open" : "closed"}`;
+        teamCount.textContent = "Teams: loading...";
+
+        loadButton.className = "primary";
+        loadButton.type = "button";
+        loadButton.textContent = "Load Game";
+        loadButton.addEventListener("click", async()=>{
+            if(await loadGame(gameDoc.id))
+                closeGameManagement();
+        });
+
+        deleteButton.className = "danger";
+        deleteButton.type = "button";
+        deleteButton.textContent = "Delete";
+        deleteButton.addEventListener(
+            "click",
+            ()=>deleteGame(gameDoc.id, deleteButton)
+        );
+
+        details.append(name);
+        if(gameDoc.id === currentGame)
+            details.append(currentBadge);
+        details.append(status, teamCount);
+        actions.append(loadButton, deleteButton);
+        row.append(details, actions);
+        gameList.append(row);
+
+        const unsubscribe =
+        onSnapshot(
+            collection(
+                db,
+                "games",
+                gameDoc.id,
+                "teams"
+            ),
+            snapshot=>{
+                if(version === gameListVersion)
+                    teamCount.textContent = `Teams: ${snapshot.size}`;
+            },
+            error=>{
+                if(version === gameListVersion)
+                    teamCount.textContent =
+                        `Team count unavailable: ${error.message}`;
+            }
+        );
+
+        gameCountUnsubscribers.push(unsubscribe);
+    });
+}
+
+async function deleteGame(gameCode, button){
+
+    const confirmed =
+    window.confirm(
+        `Delete game "${gameCode}" and all of its teams, votes, and results? This cannot be undone.`
+    );
+
+    if(!confirmed)
+        return;
+
+    button.disabled = true;
+    setManagementStatus(`Deleting game "${gameCode}"...`);
+
+    try{
+        await deleteGameData(gameCode);
+
+        if(currentGame === gameCode){
+            stopListeners();
+            currentGame = null;
+            setGameControlsEnabled(false);
+            clearGameDisplay();
+            document.getElementById("activeGameName").textContent = "";
+            setStatus("The active game was deleted.");
+        }
+
+        setManagementStatus(`Game "${gameCode}" deleted.`);
+    }catch(error){
+        button.disabled = false;
+        setManagementStatus(
+            `Unable to fully delete game "${gameCode}": ${error.message}`
+        );
+    }
+}
+
+async function deleteGameData(gameCode){
+
+    const gameRef = doc(db, "games", gameCode);
+    const gameSnapshot = await getDoc(gameRef);
+    const configuredRound = Number(
+        gameSnapshot.exists()
+            ? gameSnapshot.data().round ?? 1
+            : 1
+    );
+    const roundCount =
+        Number.isSafeInteger(configuredRound) && configuredRound > 0
+            ? configuredRound
+            : 1;
+
+    const teamsSnapshot =
+    await getDocs(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "teams"
+        )
+    );
+
+    await deleteDocuments(teamsSnapshot.docs);
+
+    const resultsSnapshot =
+    await getDocs(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "results"
+        )
+    );
+
+    await deleteDocuments(resultsSnapshot.docs);
+
+    const voteRoundsSnapshot =
+    await getDocs(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "votes"
+        )
+    );
+
+    const roundIds = new Set();
+    for(let round = 1; round <= roundCount; round++)
+        getVoteRoundIds(round).forEach(roundId=>roundIds.add(roundId));
+
+    voteRoundsSnapshot.docs.forEach(roundDoc=>{
+        roundIds.add(roundDoc.id);
+    });
+
+    for(const roundId of roundIds){
+
+        const roundVotesSnapshot =
+        await getDocs(
+            collection(
+                db,
+                "games",
+                gameCode,
+                "votes",
+                roundId,
+                "teams"
+            )
+        );
+
+        await deleteDocuments(roundVotesSnapshot.docs);
+        await deleteDoc(
+            doc(
+                db,
+                "games",
+                gameCode,
+                "votes",
+                roundId
+            )
+        );
+    }
+
+    const teamNamesSnapshot =
+    await getDocs(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "teamNames"
+        )
+    );
+
+    await deleteDocuments(teamNamesSnapshot.docs);
+    await deleteDoc(gameRef);
+}
+
+async function deleteDocuments(documents){
+    await deleteDocumentReferences(
+        documents.map(document=>document.ref)
+    );
+}
+
+async function deleteDocumentReferences(references){
+
+    for(let index = 0; index < references.length; index += 400){
+
+        const batch = writeBatch(db);
+        references
+            .slice(index, index + 400)
+            .forEach(reference=>batch.delete(reference));
+
+        await batch.commit();
+    }
+}
+
+async function loadGame(gameCode){
+    const request = ++loadRequest;
+
+    stopListeners();
+    currentGame = null;
+    setGameControlsEnabled(false);
+    clearGameDisplay();
+    document.getElementById("activeGameName").textContent = "";
+
+    if(!gameCode || gameCode.includes("/")){
+        setStatus("Invalid game code.");
+        return false;
+    }
+
+    setStatus("Loading game...");
+
+    let gameSnap;
+
+    try{
+        gameSnap =
+        await getDoc(
+            doc(
+                db,
+                "games",
+                gameCode
+            )
+        );
+    }catch(error){
+        if(request === loadRequest)
+            setStatus(`Unable to load game: ${error.message}`);
+        return false;
+    }
+
+    if(request !== loadRequest)
+        return false;
+
+    if(!gameSnap.exists()){
+        setStatus("Game not found.");
+        return false;
+    }
+
+    currentGame = gameCode;
+    document.getElementById("activeGameName").textContent =
+        `: ${gameCode}`;
+    setGameControlsEnabled(true);
+    listenForGame(gameCode);
+    listenForTeams(gameCode);
+    listenForResults(gameCode);
+    return true;
+}
+
+async function createGame(){
+
+    const gameCode =
+    document
+    .getElementById("newGameCode")
+    .value
+    .trim();
+
+    if(!gameCode || gameCode.includes("/")){
+        setManagementStatus("Enter a valid game code without slashes.");
+        return;
+    }
+
+    const gameRef =
+    doc(
+        db,
+        "games",
+        gameCode
+    );
+
+    let created;
+
+    try{
+        created =
+        await runTransaction(
+            db,
+            async transaction=>{
+
+                const gameSnap =
+                await transaction.get(gameRef);
+
+                if(gameSnap.exists())
+                    return false;
+
+                transaction.set(
+                    gameRef,
+                    {
+                        round:1,
+                        votingOpen:false,
+                        roundComplete:false
+                    }
+                );
+
+                return true;
+            }
+        );
+    }catch(error){
+        setManagementStatus(`Unable to create game: ${error.message}`);
+        return;
+    }
+
+    if(!created){
+        setManagementStatus("That game code already exists.");
+        return;
+    }
+
+    setManagementStatus("Game created.");
+    const loaded = await loadGame(gameCode);
+
+    if(loaded){
+        document.getElementById("newGameCode").value = "";
+        document.getElementById("gameManagementDialog").close();
+    }
+}
+
+function listenForGame(gameCode){
+
+    unsubscribeGame =
+    onSnapshot(
+        doc(
+            db,
+            "games",
+            gameCode
+        ),
+        snap=>{
+
+            if(!snap.exists() || currentGame !== gameCode)
+                return;
+
+            const game = snap.data();
+            votingOpen = game.votingOpen === true;
+            roundComplete = game.roundComplete === true;
+            const round = game.round ?? 1;
+            document.getElementById("roundNumber").textContent =
+                round;
+            if(currentRound !== round){
+                listenForRoundVotes(gameCode, round);
+                renderResults(currentResults);
+            }
+            updateGameControls();
+            setStatus(
+                `Round ${round} · Voting ` +
+                `${votingOpen ? "Open" : "Closed"}` +
+                `${roundComplete ? " · Round complete" : ""}`
+            );
+        },
+        error=>{
+            setStatus(`Unable to load game status: ${error.message}`);
+        }
+    );
+}
+
+function listenForTeams(gameCode){
+
+    unsubscribeTeams =
+    onSnapshot(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "teams"
+        ),
+        snapshot=>{
+
+            if(currentGame !== gameCode)
+                return;
+
+            currentTeams =
+            snapshot.docs
+                .map(teamDoc=>({
+                    ...teamDoc.data(),
+                    id:teamDoc.id
+                }))
+                .sort((a, b)=>
+                    String(a.name ?? "").localeCompare(
+                        String(b.name ?? ""),
+                        undefined,
+                        { sensitivity:"base" }
+                    )
+                );
+
+            updateVoteProgress();
+            document.getElementById("teamCount").textContent =
+                snapshot.size;
+
+            if(snapshot.empty){
+                document.getElementById("avgScore").textContent = "0";
+                renderTeams(currentTeams);
+                return;
+            }
+
+            const totalScore =
+            currentTeams.reduce(
+                (total, team)=>total + (team.score ?? 100),
+                0
+            );
+
+            document.getElementById("avgScore").textContent =
+                (totalScore / currentTeams.length).toFixed(1);
+
+            renderTeams(currentTeams);
+        },
+        error=>{
+            setStatus(`Unable to load teams: ${error.message}`);
+        }
+    );
+}
+
+function listenForRoundVotes(gameCode, round){
+
+    unsubscribeRoundVotes?.();
+    unsubscribeLegacyRoundVotes?.();
+    currentRound = round;
+    currentRoundVotes = new Set();
+    roundVotesLoaded = false;
+    voteProgressError = null;
+    updateVoteProgress();
+
+    const voteRoundIds = getVoteRoundIds(round);
+    const snapshotsByRound = new Map();
+    const subscribeToRoundVotes = roundId=>
+        onSnapshot(
+            collection(
+                db,
+                "games",
+                gameCode,
+                "votes",
+                roundId,
+                "teams"
+            ),
+            snapshot=>{
+
+                if(currentGame !== gameCode || currentRound !== round)
+                    return;
+
+                snapshotsByRound.set(
+                    roundId,
+                    new Set(snapshot.docs.map(voteDoc=>voteDoc.id))
+                );
+                currentRoundVotes = new Set(
+                    [...snapshotsByRound.values()]
+                        .flatMap(teamIds=>[...teamIds])
+                );
+                roundVotesLoaded =
+                    snapshotsByRound.size === voteRoundIds.length;
+                updateVoteProgress();
+            },
+            error=>{
+
+                if(currentGame !== gameCode || currentRound !== round)
+                    return;
+
+                voteProgressError =
+                    `Unable to load vote progress: ${error.message}`;
+                updateVoteProgress();
+            }
+        );
+    const unsubscribeVotes =
+        voteRoundIds.map(subscribeToRoundVotes);
+
+    unsubscribeRoundVotes = unsubscribeVotes[0] ?? null;
+    unsubscribeLegacyRoundVotes = unsubscribeVotes[1] ?? null;
+}
+
+function updateVoteProgress(){
+
+    const dial = document.getElementById("voteProgressDial");
+    const teamIds = new Set(currentTeams.map(team=>team.id));
+    const votedCount =
+        [...currentRoundVotes]
+            .filter(teamId=>teamIds.has(teamId))
+            .length;
+    const teamCount = currentTeams.length;
+    const percent =
+        teamCount === 0
+            ? 0
+            : Math.round(votedCount / teamCount * 100);
+
+    dial.style.setProperty("--vote-progress", `${percent}%`);
+    dial.setAttribute("aria-valuenow", percent);
+    dial.setAttribute(
+        "aria-valuetext",
+        `${percent}%; ${votedCount} of ${teamCount} teams have voted`
+    );
+    document.getElementById("voteProgressPercent").textContent =
+        `${percent}%`;
+    document.getElementById("voteProgressCount").textContent =
+        `${votedCount}/${teamCount} teams`;
+
+    const status = document.getElementById("voteProgressStatus");
+    if(voteProgressError){
+        status.textContent = voteProgressError;
+    }else if(currentRound === null){
+        status.textContent = "Load a game to see vote progress.";
+    }else if(!roundVotesLoaded){
+        status.textContent =
+            `Loading vote progress for round ${currentRound}...`;
+    }else if(teamCount === 0){
+        status.textContent = "No teams have joined this game.";
+    }else{
+        status.textContent =
+            `Round ${currentRound} · Voting ${votingOpen ? "open" : "closed"}`;
+    }
+}
+
+function toggleTeamManagement(){
+
+    teamManagementMode = !teamManagementMode;
+    if(teamManagementMode)
+        setTeamChartVisible(false);
+    updateGameControls();
+
+    const button =
+    document.getElementById("manageTeamsBtn");
+    const status =
+    document.getElementById("teamManagementStatus");
+
+    button.setAttribute(
+        "aria-pressed",
+        String(teamManagementMode)
+    );
+    button.title = teamManagementMode
+        ? "Done managing teams"
+        : "Manage registered teams";
+
+    status.hidden = !teamManagementMode;
+    status.textContent = teamManagementMode
+        ? "Choose a team to remove."
+        : "";
+
+    renderTeams(currentTeams);
+}
+
+function toggleTeamView(){
+
+    setTeamChartVisible(!teamChartVisible);
+}
+
+function setTeamChartVisible(visible){
+
+    teamChartVisible = visible;
+    document.getElementById("teams").hidden = visible;
+    document.getElementById("teamChart").hidden = !visible;
+
+    const button =
+    document.getElementById("toggleTeamViewBtn");
+    button.textContent = visible ? "Show list" : "Show chart";
+    button.setAttribute("aria-pressed", String(visible));
+}
+
+function formatAverageWinnings(teamId){
+
+    const stats = teamWinningsStats.get(teamId);
+    if(!stats || stats.roundCount === 0)
+        return "Avg. winnings/round: —";
+
+    const average = stats.total / stats.roundCount;
+    const formattedAverage =
+        `${average > 0 ? "+" : ""}${average.toFixed(1)}`;
+
+    return `Avg. winnings/round: ${formattedAverage} ` +
+        `(${stats.roundCount} played)`;
+}
+
+function renderTeams(teams){
+
+    const teamsContainer =
+    document.getElementById("teams");
+
+    teamsContainer.replaceChildren();
+    teamsContainer.classList.toggle("empty", teams.length === 0);
+    renderTeamChart(teams);
+
+    if(teams.length === 0){
+        teamsContainer.textContent = "No teams joined yet.";
+        return;
+    }
+
+    teams.forEach(team=>{
+
+        const row = document.createElement("div");
+        const details = document.createElement("div");
+        const name = document.createElement("div");
+        const score = document.createElement("div");
+        const average = document.createElement("div");
+
+        row.className = "team";
+        name.className = "team-name";
+        name.textContent = team.name ?? "Unnamed team";
+        score.textContent = `Score: ${team.score ?? 100}`;
+        average.className = "team-average-winnings";
+        average.textContent = formatAverageWinnings(team.id);
+        details.append(name, score, average);
+
+        if(teamManagementMode){
+            const teamIdLabel =
+            document.createElement("small");
+
+            teamIdLabel.className = "team-id";
+            teamIdLabel.textContent = `ID: ${team.id.slice(0, 8)}`;
+            details.append(teamIdLabel);
+        }
+
+        row.append(details);
+
+        if(teamManagementMode){
+            const removeButton =
+            document.createElement("button");
+
+            removeButton.className = "danger team-remove-button";
+            removeButton.type = "button";
+            removeButton.textContent = "Remove";
+            removeButton.setAttribute(
+                "aria-label",
+                `Remove ${team.name ?? "unnamed team"} (${team.id.slice(0, 8)})`
+            );
+            removeButton.addEventListener(
+                "click",
+                ()=>removeTeam(currentGame, team, removeButton)
+            );
+
+            row.append(removeButton);
+        }
+
+        teamsContainer.append(row);
+    });
+}
+
+function renderTeamChart(teams){
+
+    const chart = document.getElementById("teamChart");
+    chart.replaceChildren();
+    chart.classList.toggle("empty", teams.length === 0);
+
+    if(teams.length === 0){
+        chart.textContent = "No teams joined yet.";
+        return;
+    }
+
+    const chartTeams =
+        teams
+            .slice()
+            .sort((a, b)=>
+                (b.score ?? 100) - (a.score ?? 100)
+            );
+    const scores =
+        chartTeams.map(team=>
+            Number.isFinite(team.score)
+                ? team.score
+                : 100
+        );
+    const minScore = Math.min(0, ...scores);
+    const maxScore = Math.max(0, ...scores);
+    const scoreRange = maxScore - minScore || 1;
+    const zeroPosition = (0 - minScore) / scoreRange * 100;
+
+    chartTeams.forEach((team, index)=>{
+
+        const row = document.createElement("div");
+        const label = document.createElement("div");
+        const name = document.createElement("span");
+        const average = document.createElement("span");
+        const track = document.createElement("div");
+        const bar = document.createElement("div");
+        const value = document.createElement("span");
+        const score = scores[index];
+        const barStart =
+            score >= 0
+                ? zeroPosition
+                : (score - minScore) / scoreRange * 100;
+        const barWidth = Math.abs(score) / scoreRange * 100;
+
+        row.className = "team-score-row";
+        row.setAttribute("role", "listitem");
+        label.className = "team-score-label";
+        name.className = "team-score-name";
+        name.textContent = team.name ?? "Unnamed team";
+        average.className = "team-score-average";
+        average.textContent = formatAverageWinnings(team.id);
+        track.className = "team-score-track";
+        track.setAttribute("aria-hidden", "true");
+        track.style.setProperty("--zero-position", `${zeroPosition}%`);
+        bar.className = "team-score-bar";
+        bar.classList.toggle("negative", score < 0);
+        bar.style.setProperty("--bar-left", `${barStart}%`);
+        bar.style.setProperty("--bar-width", `${barWidth}%`);
+        value.className = "team-score-value";
+        value.textContent = String(score);
+
+        const latestChange = latestWinningsByTeam.get(team.id);
+        if(Number.isFinite(latestChange) && latestChange !== 0){
+            const trend = document.createElement("span");
+            const increased = latestChange > 0;
+            const trendDescription = increased
+                ? "Points increased in the latest round"
+                : "Points decreased in the latest round";
+
+            trend.className =
+                `team-score-trend team-score-trend-${increased ? "up" : "down"}`;
+            trend.setAttribute("role", "img");
+            trend.setAttribute("aria-label", trendDescription);
+            trend.title = trendDescription;
+            trend.textContent = increased ? "↑" : "↓";
+            value.append(" ", trend);
+        }
+
+        label.append(name, average);
+        track.append(bar);
+        row.append(label, track, value);
+        chart.append(row);
+    });
+}
+
+async function removeTeam(gameCode, team, button){
+
+    const confirmed =
+    window.confirm(
+        `Remove "${team.name}" (${team.id.slice(0, 8)}) from "${gameCode}"? Their votes and round results will also be deleted.`
+    );
+
+    if(!confirmed)
+        return;
+
+    button.disabled = true;
+    document.getElementById("teamManagementStatus").textContent =
+        `Removing ${team.name}...`;
+
+    try{
+        await removeTeamData(gameCode, team);
+        document.getElementById("teamManagementStatus").textContent =
+            `${team.name} was removed from ${gameCode}.`;
+    }catch(error){
+        button.disabled = false;
+        document.getElementById("teamManagementStatus").textContent =
+            `Unable to remove ${team.name}: ${error.message}`;
+    }
+}
+
+async function removeTeamData(gameCode, team){
+
+    const gameSnapshot =
+    await getDoc(
+        doc(
+            db,
+            "games",
+            gameCode
+        )
+    );
+
+    if(!gameSnapshot.exists())
+        throw new Error("The game no longer exists.");
+
+    const currentRound =
+    Number(gameSnapshot.data().round ?? 1);
+    const roundCount =
+    Number.isSafeInteger(currentRound) && currentRound > 0
+        ? currentRound
+        : 1;
+    const referencesToDelete = [];
+
+    for(let round = 1; round <= roundCount; round++){
+        for(const roundId of getVoteRoundIds(round)){
+            const votesSnapshot =
+            await getDocs(
+                collection(
+                    db,
+                    "games",
+                    gameCode,
+                    "votes",
+                    roundId,
+                    "teams"
+                )
+            );
+
+            const voteDoc =
+            votesSnapshot.docs.find(
+                snapshotDoc=>snapshotDoc.id === team.id
+            );
+
+            if(voteDoc)
+                referencesToDelete.push(voteDoc.ref);
+        }
+    }
+
+    const [resultsSnapshot, namesSnapshot] =
+    await Promise.all([
+        getDocs(
+            collection(
+                db,
+                "games",
+                gameCode,
+                "results"
+            )
+        ),
+        getDocs(
+            collection(
+                db,
+                "games",
+                gameCode,
+                "teamNames"
+            )
+        )
+    ]);
+
+    resultsSnapshot.docs
+        .filter(resultDoc=>resultDoc.data().teamId === team.id)
+        .forEach(resultDoc=>
+            referencesToDelete.push(resultDoc.ref)
+        );
+
+    namesSnapshot.docs
+        .filter(nameDoc=>nameDoc.data().teamId === team.id)
+        .forEach(nameDoc=>
+            referencesToDelete.push(nameDoc.ref)
+        );
+
+    await deleteDocumentReferences(referencesToDelete);
+
+    await deleteDoc(
+        doc(
+            db,
+            "games",
+            gameCode,
+            "teams",
+            team.id
+        )
+    );
+}
+
+function listenForResults(gameCode){
+
+    unsubscribeResults =
+    onSnapshot(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "results"
+        ),
+        snapshot=>{
+
+            if(currentGame !== gameCode)
+                return;
+
+            currentResults =
+            snapshot.docs
+                .map(resultDoc=>resultDoc.data())
+                .sort((a, b)=>
+                    b.round - a.round ||
+                    (a.teamName ?? "").localeCompare(b.teamName ?? "")
+                );
+
+            teamWinningsStats = new Map();
+            latestWinningsByTeam = new Map();
+            currentResults.forEach(result=>{
+
+                if(typeof result.teamId !== "string" ||
+                   !Number.isFinite(result.delta))
+                    return;
+
+                if(!latestWinningsByTeam.has(result.teamId))
+                    latestWinningsByTeam.set(result.teamId, result.delta);
+
+                const stats =
+                    teamWinningsStats.get(result.teamId) ??
+                    { total:0, roundCount:0 };
+                stats.total += result.delta;
+                stats.roundCount++;
+                teamWinningsStats.set(result.teamId, stats);
+            });
+
+            renderTeams(currentTeams);
+            renderChoiceAverages(currentResults);
+            renderResults(currentResults);
+        },
+        error=>{
+            setStatus(`Unable to load round results: ${error.message}`);
+        }
+    );
+}
+
+function renderChoiceAverages(results){
+
+    const choices = ["Safe", "Explorer", "Treasure"];
+    const averages = new Map(
+        choices.map(choice=>[
+            choice,
+            { total:0, count:0 }
+        ])
+    );
+
+    results.forEach(result=>{
+
+        const stats = averages.get(result.choice);
+        if(!stats || !Number.isFinite(result.delta))
+            return;
+
+        stats.total += result.delta;
+        stats.count++;
+    });
+
+    choices.forEach(choice=>{
+
+        const key = choice.toLowerCase();
+        const stats = averages.get(choice);
+        const averageElement =
+            document.getElementById(`${key}Average`);
+        const countElement =
+            document.getElementById(`${key}AverageCount`);
+
+        averageElement.classList.remove("positive", "negative");
+        if(stats.count === 0){
+            averageElement.textContent = "—";
+            countElement.textContent = "No logged outcomes";
+            return;
+        }
+
+        const average = stats.total / stats.count;
+        const formatted =
+            `${average > 0 ? "+" : ""}${average.toFixed(1)}`;
+
+        averageElement.textContent = `${formatted} points`;
+        averageElement.classList.toggle("positive", average > 0);
+        averageElement.classList.toggle("negative", average < 0);
+        countElement.textContent =
+            `${stats.count} logged team-round ` +
+            `${stats.count === 1 ? "outcome" : "outcomes"}`;
+    });
+}
+
+function renderResults(results){
+
+    const resultsContainer =
+    document.getElementById("results");
+    resultsContainer.replaceChildren();
+    resultsContainer.classList.toggle("empty", results.length === 0);
+
+    if(results.length === 0){
+        resultsContainer.textContent = "No round results logged yet.";
+        return;
+    }
+
+    const resultsByRound = new Map();
+    results.forEach(result=>{
+        if(!resultsByRound.has(result.round))
+            resultsByRound.set(result.round, []);
+        resultsByRound.get(result.round).push(result);
+    });
+
+    resultsByRound.forEach((roundResults, round)=>{
+
+        const roundSection = document.createElement("details");
+        const heading = document.createElement("summary");
+        const entries = document.createElement("div");
+
+        roundSection.className = "result-round";
+        roundSection.name = "round-results";
+        roundSection.open = round === currentRound;
+        heading.textContent = `Round ${round}`;
+        entries.className = "result-round-entries";
+
+        roundResults.forEach(result=>{
+
+            const row = document.createElement("div");
+            row.className = "result";
+            row.textContent =
+                `${result.teamName} chose ${result.choice}: ` +
+                `${result.delta > 0 ? "+" : ""}${result.delta} ` +
+                `(score: ${result.score})`;
+            entries.append(row);
+        });
+
+        roundSection.append(heading, entries);
+        resultsContainer.append(roundSection);
+    });
+}
+
+async function openVoting(){
+
+    if(!currentGame || roundComplete || runningRound || advancingRound)
+        return;
+
+    await updateDoc(
+        doc(
+            db,
+            "games",
+            currentGame
+        ),
+        {
+            votingOpen:true
+        }
+    );
+}
+
+async function closeVoting(){
+
+    if(!currentGame || roundComplete || runningRound || advancingRound)
+        return;
+
+    await updateDoc(
+        doc(
+            db,
+            "games",
+            currentGame
+        ),
+        {
+            votingOpen:false
+        }
+    );
+}
+
+async function advanceRound(){
+
+    if(!currentGame || !roundComplete || advancingRound || runningRound)
+        return;
+
+    const gameCode = currentGame;
+    const gameRef =
+    doc(
+        db,
+        "games",
+        gameCode
+    );
+
+    advancingRound = true;
+    updateGameControls();
+
+    try{
+        const advanced =
+        await runTransaction(
+            db,
+            async transaction=>{
+
+                const snap =
+                await transaction.get(gameRef);
+
+                if(!snap.exists())
+                    throw new Error("The game no longer exists.");
+
+                const game = snap.data();
+
+                if(game.roundComplete !== true)
+                    return false;
+
+                transaction.update(
+                    gameRef,
+                    {
+                        round: (game.round ?? 0) + 1,
+                        votingOpen:true,
+                        roundComplete:false
+                    }
+                );
+
+                return true;
+            }
+        );
+
+        if(!advanced){
+            if(currentGame === gameCode)
+                setStatus("Run the round before advancing.");
+            return;
+        }
+
+        if(currentGame === gameCode){
+            roundComplete = false;
+            votingOpen = true;
+            updateGameControls();
+        }
+    }catch(error){
+        if(currentGame === gameCode)
+            setStatus(`Unable to advance round: ${error.message}`);
+    }finally{
+        advancingRound = false;
+        updateGameControls();
+    }
+}
+
+async function runRound(){
+
+    if(!currentGame || roundComplete || runningRound)
+        return;
+
+    const gameCode = currentGame;
+
+    runningRound = true;
+    updateGameControls();
+
+    try{
+        const gameSnap =
+        await getDoc(
+            doc(
+                db,
+                "games",
+                gameCode
+            )
+        );
+
+        if(!gameSnap.exists())
+            throw new Error("The game no longer exists.");
+
+        const game = gameSnap.data();
+
+        if(game.roundComplete === true){
+            if(currentGame === gameCode){
+                roundComplete = true;
+                votingOpen = game.votingOpen === true;
+                updateGameControls();
+            }
+            return;
+        }
+
+        const round = game.round;
+        const voteSnapshots =
+            await Promise.all(
+                getVoteRoundIds(round).map(roundId=>
+                    getDocs(
+                        collection(
+                            db,
+                            "games",
+                            gameCode,
+                            "votes",
+                            roundId,
+                            "teams"
+                        )
+                    )
+                )
+            );
+        const votesByTeam = new Map();
+        voteSnapshots.forEach(snapshot=>{
+            snapshot.docs.forEach(voteDoc=>{
+                const existingVote = votesByTeam.get(voteDoc.id);
+                const existingTimestamp =
+                    existingVote?.data().timestamp ?? 0;
+                const timestamp = voteDoc.data().timestamp ?? 0;
+
+                if(!existingVote || timestamp > existingTimestamp)
+                    votesByTeam.set(voteDoc.id, voteDoc);
+            });
+        });
+
+        for(const voteDoc of votesByTeam.values()){
+
+            const vote = voteDoc.data();
+            const teamRef =
+            doc(
+                db,
+                "games",
+                gameCode,
+                "teams",
+                vote.teamId
+            );
+
+            let delta = 0;
+
+            if(vote.choice === "Safe"){
+                delta = EXPEDITIONS.Safe.points;
+            }
+
+            if(vote.choice === "Explorer"){
+                delta =
+                    Math.random() < EXPEDITIONS.Explorer.success
+                        ? EXPEDITIONS.Explorer.win
+                        : EXPEDITIONS.Explorer.lose;
+            }
+
+            if(vote.choice === "Treasure"){
+                delta =
+                    Math.random() < EXPEDITIONS.Treasure.success
+                        ? EXPEDITIONS.Treasure.win
+                        : EXPEDITIONS.Treasure.lose;
+            }
+
+            const resultRef =
+            doc(
+                db,
+                "games",
+                gameCode,
+                "results",
+                `round${round}_${vote.teamId}`
+            );
+
+            await runTransaction(
+                db,
+                async transaction=>{
+
+                    const existingResult =
+                    await transaction.get(resultRef);
+
+                    if(existingResult.exists())
+                        return;
+
+                    const teamSnap =
+                    await transaction.get(teamRef);
+
+                    if(!teamSnap.exists())
+                        return;
+
+                    const team = teamSnap.data();
+                    const result = {
+                        round,
+                        teamId: vote.teamId,
+                        teamName: team.name,
+                        choice: vote.choice,
+                        delta,
+                        score: team.score + delta,
+                        timestamp: Date.now()
+                    };
+
+                    transaction.update(
+                        teamRef,
+                        { score: result.score }
+                    );
+
+                    transaction.set(
+                        resultRef,
+                        result
+                    );
+                }
+            );
+        }
+
+        await updateDoc(
+            doc(
+                db,
+                "games",
+                gameCode
+            ),
+            {
+                votingOpen:false,
+                roundComplete:true
+            }
+        );
+
+        if(currentGame === gameCode){
+            votingOpen = false;
+            roundComplete = true;
+            updateGameControls();
+            setStatus(`Round ${round} complete · Voting Closed`);
+        }
+    }catch(error){
+        if(currentGame === gameCode)
+            setStatus(`Unable to run round: ${error.message}`);
+    }finally{
+        runningRound = false;
+        updateGameControls();
+    }
+}
+
+</script>
+
+</body>
+</html>

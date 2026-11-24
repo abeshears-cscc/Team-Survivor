@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Statistics Survivor Admin</title>
+
+<style>
+
+body{
+    font-family: Arial, sans-serif;
+    max-width:1200px;
+    margin:auto;
+    padding:20px;
+    background:#f5f5f5;
+}
+
+h1{
+    color:#002E5D;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    margin-bottom:20px;
+    border-radius:10px;
+    box-shadow:0 2px 5px rgba(0,0,0,.15);
+}
+
+button{
+    padding:12px 20px;
+    margin:5px;
+    border:none;
+    border-radius:5px;
+    cursor:pointer;
+    font-size:16px;
+}
+
+.primary{
+    background:#00B140;
+    color:white;
+}
+
+.secondary{
+    background:#002E5D;
+    color:white;
+}
+
+.danger{
+    background:#C62828;
+    color:white;
+}
+
+.team{
+    padding:10px;
+    margin:5px 0;
+    border-left:5px solid #00B140;
+    background:#fafafa;
+}
+
+.vote-progress-section{
+    display:flex;
+    align-items:center;
+    gap:16px;
+    margin:16px 0;
+}
+
+.vote-progress-section p{
+    min-width:0;
+    flex:1;
+}
+
+.vote-progress-dial{
+    --vote-progress:0%;
+    display:grid;
+    flex:0 0 116px;
+    width:116px;
+    height:116px;
+    place-items:center;
+    border-radius:50%;
+    background:conic-gradient(#00B140 var(--vote-progress),#e5e5e5 0);
+    transition:background .2s ease;
+}
+
+.vote-progress-inner{
+    display:flex;
+    width:88px;
+    height:88px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:white;
+    text-align:center;
+}
+
+.vote-progress-percent{
+    color:#002E5D;
+    font-size:1.5rem;
+    font-weight:bold;
+}
+
+.vote-progress-count{
+    color:#555;
+    font-size:.8rem;
+}
+
+.result{
+    margin-bottom:10px;
+    padding:10px;
+    background:#f2f2f2;
+}
+
+input{
+    padding:10px;
+    width:250px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Statistics Survivor Admin</h1>
+
+<div class="card">
+
+    <h2>Load Game</h2>
+
+    <input
+        id="gameCode"
+        value="testgame">
+
+    <button
+        class="secondary"
+        id="loadGameBtn">
+
+        Load Game
+    </button>
+
+    <button
+        class="primary"
+        id="createGameBtn">
+
+        Create Game
+    </button>
+
+</div>
+
+<div class="card">
+
+    <h2>Game Controls</h2>
+
+    <div class="vote-progress-section">
+        <div id="voteProgressDial"
+             class="vote-progress-dial"
+             role="progressbar"
+             aria-label="Teams that have voted in the current round"
+             aria-valuemin="0"
+             aria-valuemax="100"
+             aria-valuenow="0"
+             aria-valuetext="No game loaded">
+            <div class="vote-progress-inner">
+                <span id="voteProgressPercent"
+                      class="vote-progress-percent">0%</span>
+                <span id="voteProgressCount"
+                      class="vote-progress-count">0/0 teams</span>
+            </div>
+        </div>
+        <p id="voteProgressStatus"
+           role="status">Load a game to see vote progress.</p>
+    </div>
+
+    <button
+        class="primary"
+        id="openVotingBtn">
+
+        Open Voting
+    </button>
+
+    <button
+        class="danger"
+        id="closeVotingBtn">
+
+        Close Voting
+    </button>
+
+    <button
+        class="secondary"
+        id="runRoundBtn">
+
+        Run Round
+    </button>
+
+    <button
+        class="secondary"
+        id="advanceRoundBtn">
+
+        Advance Round
+    </button>
+
+</div>
+
+<div class="card">
+
+    <h2>Game Status</h2>
+
+    <div id="status"></div>
+
+</div>
+
+<div class="card">
+
+    <h2>Teams</h2>
+
+    <div id="teams"></div>
+
+</div>
+
+<div class="card">
+
+    <h2>Round Results</h2>
+
+    <div id="results"></div>
+
+</div>
+
+<script type="module">
+
+import { db }
+from "./firebase.js";
+
+import {
+
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  getDocs,
+  runTransaction,
+  onSnapshot
+
+} from
+"https://www.gstatic.com/firebasejs/11.1.0/firebase-firestore.js";
+
+let currentGame = "testgame";
+let progressGame = null;
+let progressRound = null;
+let progressVotingOpen = false;
+let progressTeamIds = new Set();
+let progressVoteIds = new Set();
+let progressVotesLoaded = false;
+let progressError = null;
+let unsubscribeProgressGame = null;
+let unsubscribeProgressTeams = null;
+let unsubscribeProgressVotes = null;
+let unsubscribeProgressLegacyVotes = null;
+
+function getVoteRoundIds(round){
+
+    const paddedRoundId =
+        `round${String(round).padStart(2, "0")}`;
+    const legacyRoundId = `round${round}`;
+
+    return paddedRoundId === legacyRoundId
+        ? [paddedRoundId]
+        : [paddedRoundId, legacyRoundId];
+}
+
+const EXPEDITIONS = {
+
+    Safe: {
+        points: 8
+    },
+
+    Explorer: {
+        success: .60,
+        win: 18,
+        lose: -8
+    },
+
+    Treasure: {
+        success: .15,
+        win: 60,
+        lose: -12
+    }
+
+};
+
+document
+.getElementById("loadGameBtn")
+.addEventListener(
+"click",
+loadGame
+);
+
+document
+.getElementById("createGameBtn")
+.addEventListener(
+"click",
+createGame
+);
+
+document
+.getElementById("openVotingBtn")
+.addEventListener(
+"click",
+openVoting
+);
+
+document
+.getElementById("closeVotingBtn")
+.addEventListener(
+"click",
+closeVoting
+);
+
+document
+.getElementById("advanceRoundBtn")
+.addEventListener(
+"click",
+advanceRound
+);
+
+document
+.getElementById("runRoundBtn")
+.addEventListener(
+"click",
+runRound
+);
+
+loadGame();
+
+async function loadGame(){
+
+    stopVoteProgressListeners();
+    currentGame =
+    document
+    .getElementById("gameCode")
+    .value
+    .trim();
+
+    const gameDoc =
+    await getDoc(
+        doc(
+            db,
+            "games",
+            currentGame
+        )
+    );
+
+    if(!gameDoc.exists()){
+
+        document
+        .getElementById("status")
+        .innerHTML =
+        "Game not found.";
+
+        return;
+    }
+
+    const game =
+    gameDoc.data();
+    listenForVoteProgress(
+        currentGame,
+        game.round ?? 1,
+        game.votingOpen === true
+    );
+
+    document
+    .getElementById("status")
+    .innerHTML =
+
+    `
+    Round: ${game.round}<br>
+    Voting Open:
+    ${game.votingOpen}
+    `;
+
+    loadTeams();
+}
+
+function stopVoteProgressListeners(){
+
+    unsubscribeProgressGame?.();
+    unsubscribeProgressTeams?.();
+    unsubscribeProgressVotes?.();
+    unsubscribeProgressLegacyVotes?.();
+
+    unsubscribeProgressGame = null;
+    unsubscribeProgressTeams = null;
+    unsubscribeProgressVotes = null;
+    unsubscribeProgressLegacyVotes = null;
+    progressGame = null;
+    progressRound = null;
+    progressTeamIds = new Set();
+    progressVoteIds = new Set();
+    progressVotesLoaded = false;
+    progressError = null;
+    updateVoteProgress();
+}
+
+function listenForVoteProgress(gameCode, round, isVotingOpen){
+
+    progressGame = gameCode;
+    progressRound = round;
+    progressVotingOpen = isVotingOpen;
+    progressVotesLoaded = false;
+    updateVoteProgress();
+
+    unsubscribeProgressTeams =
+    onSnapshot(
+        collection(
+            db,
+            "games",
+            gameCode,
+            "teams"
+        ),
+        snapshot=>{
+
+            if(progressGame !== gameCode)
+                return;
+
+            progressTeamIds =
+                new Set(snapshot.docs.map(teamDoc=>teamDoc.id));
+            updateVoteProgress();
+        },
+        error=>{
+
+            if(progressGame !== gameCode)
+                return;
+
+            progressError =
+                `Unable to load teams for vote progress: ${error.message}`;
+            updateVoteProgress();
+        }
+    );
+
+    unsubscribeProgressGame =
+    onSnapshot(
+        doc(
+            db,
+            "games",
+            gameCode
+        ),
+        snapshot=>{
+
+            if(progressGame !== gameCode || !snapshot.exists())
+                return;
+
+            const game = snapshot.data();
+            progressVotingOpen = game.votingOpen === true;
+            const currentRound = game.round ?? 1;
+            if(progressRound !== currentRound)
+                listenForRoundVotes(gameCode, currentRound);
+            updateVoteProgress();
+        },
+        error=>{
+
+            if(progressGame !== gameCode)
+                return;
+
+            progressError =
+                `Unable to load game status for vote progress: ${error.message}`;
+            updateVoteProgress();
+        }
+    );
+
+    listenForRoundVotes(gameCode, round);
+}
+
+function listenForRoundVotes(gameCode, round){
+
+    unsubscribeProgressVotes?.();
+    unsubscribeProgressLegacyVotes?.();
+    progressRound = round;
+    progressVoteIds = new Set();
+    progressVotesLoaded = false;
+    progressError = null;
+    updateVoteProgress();
+
+    const voteRoundIds = getVoteRoundIds(round);
+    const snapshotsByRound = new Map();
+    const subscribeToRoundVotes = roundId=>
+        onSnapshot(
+            collection(
+                db,
+                "games",
+                gameCode,
+                "votes",
+                roundId,
+                "teams"
+            ),
+            snapshot=>{
+
+                if(progressGame !== gameCode || progressRound !== round)
+                    return;
+
+                snapshotsByRound.set(
+                    roundId,
+                    new Set(snapshot.docs.map(voteDoc=>voteDoc.id))
+                );
+                progressVoteIds = new Set(
+                    [...snapshotsByRound.values()]
+                        .flatMap(teamIds=>[...teamIds])
+                );
+                progressVotesLoaded =
+                    snapshotsByRound.size === voteRoundIds.length;
+                updateVoteProgress();
+            },
+            error=>{
+
+                if(progressGame !== gameCode || progressRound !== round)
+                    return;
+
+                progressError =
+                    `Unable to load vote progress: ${error.message}`;
+                updateVoteProgress();
+            }
+        );
+    const unsubscribeVotes =
+        voteRoundIds.map(subscribeToRoundVotes);
+
+    unsubscribeProgressVotes = unsubscribeVotes[0] ?? null;
+    unsubscribeProgressLegacyVotes = unsubscribeVotes[1] ?? null;
+}
+
+function updateVoteProgress(){
+
+    const dial = document.getElementById("voteProgressDial");
+    const votedCount =
+        [...progressVoteIds]
+            .filter(teamId=>progressTeamIds.has(teamId))
+            .length;
+    const teamCount = progressTeamIds.size;
+    const percent =
+        teamCount === 0
+            ? 0
+            : Math.round(votedCount / teamCount * 100);
+
+    dial.style.setProperty("--vote-progress", `${percent}%`);
+    dial.setAttribute("aria-valuenow", percent);
+    dial.setAttribute(
+        "aria-valuetext",
+        `${percent}%; ${votedCount} of ${teamCount} teams have voted`
+    );
+    document.getElementById("voteProgressPercent").textContent =
+        `${percent}%`;
+    document.getElementById("voteProgressCount").textContent =
+        `${votedCount}/${teamCount} teams`;
+
+    const status = document.getElementById("voteProgressStatus");
+    if(progressError){
+        status.textContent = progressError;
+    }else if(progressGame === null){
+        status.textContent = "Load a game to see vote progress.";
+    }else if(!progressVotesLoaded){
+        status.textContent =
+            `Loading vote progress for round ${progressRound}...`;
+    }else if(teamCount === 0){
+        status.textContent = "No teams have joined this game.";
+    }else{
+        status.textContent =
+            `Round ${progressRound} · Voting ` +
+            `${progressVotingOpen ? "open" : "closed"}`;
+    }
+}
+
+async function createGame(){
+
+    const gameCode =
+    document
+    .getElementById("gameCode")
+    .value
+    .trim();
+
+    if(!gameCode || gameCode.includes("/")){
+        document
+        .getElementById("status")
+        .textContent =
+        "Enter a valid game code without slashes.";
+
+        return;
+    }
+
+    const gameRef =
+    doc(
+        db,
+        "games",
+        gameCode
+    );
+
+    const created =
+    await runTransaction(
+        db,
+        async transaction=>{
+
+            const gameSnap =
+            await transaction.get(gameRef);
+
+            if(gameSnap.exists())
+                return false;
+
+            transaction.set(
+                gameRef,
+                {
+                    round:1,
+                    votingOpen:false
+                }
+            );
+
+            return true;
+        }
+    );
+
+    if(!created){
+        document
+        .getElementById("status")
+        .textContent =
+        "That game code already exists. Load it to manage the existing game.";
+
+        return;
+    }
+
+    currentGame = gameCode;
+    document
+    .getElementById("status")
+    .innerHTML =
+    "Game created.<br>Round: 1<br>Voting Open: false";
+
+    document
+    .getElementById("results")
+    .replaceChildren();
+
+    listenForVoteProgress(currentGame, 1, false);
+    loadTeams();
+}
+
+async function loadTeams(){
+
+    const snap =
+    await getDocs(
+
+        collection(
+            db,
+            "games",
+            currentGame,
+            "teams"
+        )
+
+    );
+
+    let html = "";
+
+    snap.forEach(teamDoc=>{
+
+        const team =
+        teamDoc.data();
+
+        html +=
+        `
+        <div class="team">
+            <strong>
+            ${team.name}
+            </strong>
+            <br>
+            Score:
+            ${team.score}
+        </div>
+        `;
+    });
+
+    document
+    .getElementById("teams")
+    .innerHTML =
+    html;
+}
+
+async function openVoting(){
+
+    await updateDoc(
+
+        doc(
+            db,
+            "games",
+            currentGame
+        ),
+
+        {
+            votingOpen:true
+        }
+
+    );
+
+    loadGame();
+}
+
+async function closeVoting(){
+
+    await updateDoc(
+
+        doc(
+            db,
+            "games",
+            currentGame
+        ),
+
+        {
+            votingOpen:false
+        }
+
+    );
+
+    loadGame();
+}
+
+async function advanceRound(){
+
+    const gameRef =
+    doc(
+        db,
+        "games",
+        currentGame
+    );
+
+    const snap =
+    await getDoc(gameRef);
+
+    const game =
+    snap.data();
+
+    await updateDoc(
+
+        gameRef,
+
+        {
+            round: game.round + 1,
+            votingOpen: true
+        }
+
+    );
+
+    document
+    .getElementById("results")
+    .innerHTML = "";
+
+    loadGame();
+}
+
+
+async function runRound(){
+
+    const gameSnap =
+    await getDoc(
+        doc(
+            db,
+            "games",
+            currentGame
+        )
+    );
+
+    const round =
+    gameSnap.data().round;
+
+    const voteSnapshots =
+        await Promise.all(
+            getVoteRoundIds(round).map(roundId=>
+                getDocs(
+                    collection(
+                        db,
+                        "games",
+                        currentGame,
+                        "votes",
+                        roundId,
+                        "teams"
+                    )
+                )
+            )
+        );
+    const votesByTeam = new Map();
+    voteSnapshots.forEach(snapshot=>{
+        snapshot.docs.forEach(voteDoc=>{
+            const existingVote = votesByTeam.get(voteDoc.id);
+            const existingTimestamp =
+                existingVote?.data().timestamp ?? 0;
+            const timestamp = voteDoc.data().timestamp ?? 0;
+
+            if(!existingVote || timestamp > existingTimestamp)
+                votesByTeam.set(voteDoc.id, voteDoc);
+        });
+    });
+
+    let resultsHTML = "";
+
+    for(const voteDoc of votesByTeam.values()){
+
+        const vote =
+        voteDoc.data();
+
+        const teamRef =
+        doc(
+            db,
+            "games",
+            currentGame,
+            "teams",
+            vote.teamId
+        );
+
+        let delta = 0;
+
+        if(vote.choice==="Safe"){
+
+            delta =
+            EXPEDITIONS
+            .Safe
+            .points;
+        }
+
+        if(vote.choice==="Explorer"){
+
+            delta =
+            Math.random()
+            <
+            EXPEDITIONS
+            .Explorer
+            .success
+
+            ?
+
+            EXPEDITIONS
+            .Explorer
+            .win
+
+            :
+
+            EXPEDITIONS
+            .Explorer
+            .lose;
+        }
+
+        if(vote.choice==="Treasure"){
+
+            delta =
+            Math.random()
+            <
+            EXPEDITIONS
+            .Treasure
+            .success
+
+            ?
+
+            EXPEDITIONS
+            .Treasure
+            .win
+
+            :
+
+            EXPEDITIONS
+            .Treasure
+            .lose;
+        }
+
+        const resultRef =
+        doc(
+            db,
+            "games",
+            currentGame,
+            "results",
+            `round${round}_${vote.teamId}`
+        );
+
+        const result =
+        await runTransaction(
+            db,
+            async transaction=>{
+
+                const existingResult =
+                await transaction.get(resultRef);
+
+                if(existingResult.exists())
+                    return existingResult.data();
+
+                const teamSnap =
+                await transaction.get(teamRef);
+
+                if(!teamSnap.exists())
+                    return null;
+
+                const team = teamSnap.data();
+                const loggedResult = {
+                    round,
+                    teamId: vote.teamId,
+                    teamName: team.name,
+                    choice: vote.choice,
+                    delta,
+                    score: team.score + delta,
+                    timestamp: Date.now()
+                };
+
+                transaction.update(
+                    teamRef,
+                    { score: loggedResult.score }
+                );
+
+                transaction.set(
+                    resultRef,
+                    loggedResult
+                );
+
+                return loggedResult;
+            }
+        );
+
+        if(!result)
+            continue;
+
+        resultsHTML +=
+
+        `
+        <div class="result">
+
+            ${result.teamName}
+
+            chose
+
+            ${result.choice}
+
+            →
+
+            ${result.delta > 0
+                ? "+"+result.delta
+                : result.delta}
+
+        </div>
+        `;
+    }
+
+    document
+    .getElementById(
+        "results"
+    )
+    .innerHTML =
+    resultsHTML;
+
+    loadTeams();
+}
+
+</script>
+
+</body>
+</html>
