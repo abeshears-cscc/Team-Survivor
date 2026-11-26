@@ -976,8 +976,6 @@ function listenForScore(){
                 typeof score === "number" ? score : null;
             const scoreElement =
                 document.getElementById("score");
-            const scoreChangeElement =
-                document.getElementById("scoreChange");
             const scoreChange =
                 typeof previousScore === "number" &&
                 typeof score === "number"
@@ -985,21 +983,10 @@ function listenForScore(){
                     : null;
 
             scoreElement.textContent = score;
+            renderScoreChange(scoreChange);
 
-            if(scoreChange){
-                scoreChangeElement.textContent =
-                    `${scoreChange > 0 ? "+" : ""}${scoreChange}`;
-                scoreChangeElement.dataset.change =
-                    scoreChange > 0 ? "increase" : "decrease";
-                scoreChangeElement.classList.remove("hidden");
-
-                if(scoreChange > 0)
-                    queueScoreIncreaseConfetti();
-            }else{
-                scoreChangeElement.textContent = "";
-                scoreChangeElement.classList.add("hidden");
-                delete scoreChangeElement.dataset.change;
-            }
+            if(scoreChange > 0)
+                queueScoreIncreaseConfetti();
 
             previousScore =
                 typeof score === "number" ? score : null;
@@ -1007,6 +994,36 @@ function listenForScore(){
         }
 
     );
+}
+
+function renderScoreChange(change){
+
+    const scoreChangeElement =
+        document.getElementById("scoreChange");
+    const persistedChange =
+        latestTeamResult &&
+        currentTeamScore !== null &&
+        Number.isFinite(latestTeamResult.delta) &&
+        latestTeamResult.delta !== 0
+            ? latestTeamResult.delta
+            : null;
+    const visibleChange =
+        Number.isFinite(change) && change !== 0
+            ? change
+            : persistedChange;
+
+    if(visibleChange === null){
+        scoreChangeElement.textContent = "";
+        scoreChangeElement.classList.add("hidden");
+        delete scoreChangeElement.dataset.change;
+        return;
+    }
+
+    scoreChangeElement.textContent =
+        `${visibleChange > 0 ? "+" : ""}${visibleChange}`;
+    scoreChangeElement.dataset.change =
+        visibleChange > 0 ? "increase" : "decrease";
+    scoreChangeElement.classList.remove("hidden");
 }
 
 function showConfetti(){
@@ -1368,6 +1385,7 @@ function listenForRoundResults(){
 
             resultsContainer.replaceChildren();
             latestTeamResult = results[0] ?? null;
+            renderScoreChange(null);
             updateRewardDial();
             maybeShowPendingConfetti();
 
@@ -1549,6 +1567,7 @@ function stopCurrentGameListeners(){
     currentTeamScore = null;
     pendingScoreIncreaseConfetti = false;
     confettiFallbackReady = false;
+    renderScoreChange(null);
 
     if(confettiFallbackTimer !== null){
         window.clearTimeout(confettiFallbackTimer);
