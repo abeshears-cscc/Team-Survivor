@@ -164,7 +164,7 @@ button:disabled{
 
 .team-score-row{
     display:grid;
-    grid-template-columns:minmax(90px,1fr) minmax(100px,2fr) 64px;
+    grid-template-columns:minmax(90px,1fr) minmax(100px,2fr) 76px;
     align-items:center;
     gap:12px;
     padding:10px 4px;
@@ -236,7 +236,7 @@ button:disabled{
 .team-score-trend{
     display:inline-block;
     margin-left:6px;
-    font-size:.9em;
+    font-size:1.5em;
     font-weight:bold;
     line-height:1;
     vertical-align:middle;
@@ -480,7 +480,7 @@ dialog::backdrop{
     }
 
     .team-score-row{
-        grid-template-columns:minmax(72px,1fr) minmax(72px,1.4fr) 52px;
+        grid-template-columns:minmax(72px,1fr) minmax(72px,1.4fr) 72px;
         gap:8px;
         font-size:.9rem;
     }
@@ -2102,21 +2102,25 @@ async function runRound(){
             );
 
             let delta = 0;
+            let roll = Math.random();
+            let rewardChance = 1;
 
             if(vote.choice === "Safe"){
                 delta = EXPEDITIONS.Safe.points;
             }
 
             if(vote.choice === "Explorer"){
+                rewardChance = EXPEDITIONS.Explorer.success;
                 delta =
-                    Math.random() < EXPEDITIONS.Explorer.success
+                    roll < rewardChance
                         ? EXPEDITIONS.Explorer.win
                         : EXPEDITIONS.Explorer.lose;
             }
 
             if(vote.choice === "Treasure"){
+                rewardChance = EXPEDITIONS.Treasure.success;
                 delta =
-                    Math.random() < EXPEDITIONS.Treasure.success
+                    roll < rewardChance
                         ? EXPEDITIONS.Treasure.win
                         : EXPEDITIONS.Treasure.lose;
             }
@@ -2152,6 +2156,8 @@ async function runRound(){
                         teamId: vote.teamId,
                         teamName: team.name,
                         choice: vote.choice,
+                        roll,
+                        rewardChance,
                         delta,
                         score: team.score + delta,
                         timestamp: Date.now()

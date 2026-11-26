@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Statistics Survivor Dashboard</title>
+
+<style>
+
+body{
+    box-sizing:border-box;
+    max-width:1100px;
+    margin:auto;
+    padding:24px;
+    background:#f5f5f5;
+    color:#222;
+    font-family:Arial,sans-serif;
+}
+
+h1{
+    margin:0 0 24px;
+    color:#002E5D;
+}
+
+.page-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+    margin-bottom:24px;
+}
+
+.page-header h1{
+    margin:0;
+}
+
+.active-game-code{
+    display:inline-block;
+    margin-left:.5em;
+    color:#555;
+    font-size:.75em;
+    font-weight:normal;
+    overflow-wrap:anywhere;
+}
+
+.gear-button{
+    display:grid;
+    flex:0 0 48px;
+    width:48px;
+    height:48px;
+    place-items:center;
+    padding:0;
+    border:0;
+    border-radius:5px;
+    background:#002E5D;
+    color:white;
+    cursor:pointer;
+    font-size:26px;
+    line-height:1;
+}
+
+.gear-button:focus-visible,
+.dialog-close-button:focus-visible{
+    outline:3px solid #00B140;
+    outline-offset:2px;
+}
+
+dialog{
+    box-sizing:border-box;
+    width:min(520px,calc(100% - 32px));
+    padding:24px;
+    border:0;
+    border-radius:10px;
+    box-shadow:0 8px 30px rgba(0,0,0,.3);
+}
+
+dialog::backdrop{
+    background:rgba(0,0,0,.55);
+}
+
+.dialog-header{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:16px;
+}
+
+.dialog-header h2{
+    margin:0;
+}
+
+.dialog-close-button{
+    width:40px;
+    height:40px;
+    padding:0;
+    margin:0;
+    border:1px solid #777;
+    border-radius:2px;
+    background:#f0f0f0;
+    color:#111;
+    cursor:pointer;
+    font-size:24px;
+}
+
+.game-picker{
+    display:grid;
+    gap:8px;
+    margin-top:20px;
+}
+
+.game-picker label{
+    font-weight:bold;
+}
+
+.game-picker select{
+    box-sizing:border-box;
+    width:100%;
+    padding:10px;
+    border:1px solid #888;
+    border-radius:5px;
+    background:white;
+    font:inherit;
+}
+
+.load-game-button{
+    width:100%;
+    padding:12px;
+    border:0;
+    border-radius:5px;
+    background:#00B140;
+    color:white;
+    cursor:pointer;
+    font:inherit;
+    font-weight:bold;
+}
+
+.load-game-button:disabled{
+    cursor:not-allowed;
+    opacity:.6;
+}
+
+.load-game-button:not(:disabled):hover{
+    background:#009d39;
+}
+
+.status{
+    min-height:1.4em;
+    margin:0;
+    color:#555;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:20px;
+}
+
+.summary-row{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:20px;
+}
+
+.panel{
+    padding:24px;
+    border-radius:10px;
+    background:white;
+    box-shadow:0 2px 6px rgba(0,0,0,.15);
+}
+
+.panel h2{
+    margin:0 0 18px;
+    color:#002E5D;
+}
+
+.score-tabs{
+    display:flex;
+    gap:4px;
+    margin-bottom:16px;
+    border-bottom:1px solid #ddd;
+}
+
+.score-tab{
+    padding:10px 14px;
+    margin:0 0 -1px;
+    border:0;
+    border-bottom:3px solid transparent;
+    background:transparent;
+    color:#555;
+    cursor:pointer;
+    font:inherit;
+    font-weight:bold;
+}
+
+.score-tab[aria-selected="true"]{
+    border-bottom-color:#00B140;
+    color:#002E5D;
+}
+
+.score-tab:focus-visible{
+    outline:3px solid #00B140;
+    outline-offset:2px;
+}
+
+.score-tabpanel{
+    min-width:0;
+}
+
+.round-panel{
+    display:flex;
+    min-height:170px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    background:#002E5D;
+    color:white;
+    text-align:center;
+}
+
+.round-panel h2{
+    margin:0;
+    color:white;
+    font-size:1.1rem;
+}
+
+.round-number{
+    margin-top:8px;
+    font-size:4rem;
+    font-weight:bold;
+    line-height:1;
+}
+
+.vote-panel{
+    display:flex;
+    min-height:170px;
+    flex-direction:column;
+    justify-content:center;
+}
+
+.vote-panel h2{
+    text-align:center;
+}
+
+.vote-progress{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:16px;
+}
+
+.vote-progress-dial{
+    --vote-progress:0%;
+    display:grid;
+    flex:0 0 116px;
+    width:116px;
+    height:116px;
+    place-items:center;
+    border-radius:50%;
+    background:conic-gradient(#00B140 var(--vote-progress),#e5e5e5 0);
+    transition:background .2s ease;
+}
+
+.vote-progress-inner{
+    display:flex;
+    width:88px;
+    height:88px;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    border-radius:50%;
+    background:white;
+    text-align:center;
+}
+
+.vote-progress-percent{
+    color:#002E5D;
+    font-size:1.5rem;
+    font-weight:bold;
+}
+
+.vote-progress-count{
+    color:#555;
+    font-size:.8rem;
+}
+
+.vote-progress-status{
+    min-width:0;
+    flex:1;
+    margin:0;
+    color:#555;
+}
+
+.score-chart{
+    display:grid;
+    max-height:480px;
+    overflow-y:auto;
+}
+
+.team-score-row{
+    display:grid;
+    grid-template-columns:minmax(90px,1fr) minmax(100px,2fr) 76px;
+    align-items:center;
+    gap:12px;
+    padding:10px 4px;
+    border-bottom:1px solid #e5e5e5;
+}
+
+.team-score-label{
+    min-width:0;
+}
+
+.team-name{
+    min-width:0;
+    overflow-wrap:anywhere;
+    font-weight:bold;
+}
+
+.team-score-track{
+    position:relative;
+    height:18px;
+    border-radius:4px;
+    background:#f0f0f0;
+}
+
+.team-score-track::before{
+    position:absolute;
+    top:-3px;
+    bottom:-3px;
+    left:var(--zero-position);
+    width:2px;
+    background:#777;
+    content:"";
+}
+
+.team-score-bar{
+    position:absolute;
+    top:0;
+    bottom:0;
+    left:var(--bar-left);
+    width:var(--bar-width);
+    border-radius:4px;
+    background:#00B140;
+}
+
+.team-score-bar.negative{
+    background:#C62828;
+}
+
+.team-score-value{
+    text-align:right;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.empty-message{
+    grid-column:1 / -1;
+    padding:12px;
+    color:#666;
+    font-weight:normal;
+    text-align:center;
+}
+
+.choice-average-section{
+    margin-top:0;
+}
+
+.choice-average h3{
+    margin:0 0 8px;
+    color:#002E5D;
+}
+
+.choice-average-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:12px;
+}
+
+.choice-average{
+    padding:14px;
+    border-radius:8px;
+    background:#f2f2f2;
+    text-align:center;
+}
+
+.choice-average h4{
+    margin:0 0 8px;
+    color:#002E5D;
+}
+
+.choice-average-value{
+    font-size:1.35rem;
+    font-weight:bold;
+}
+
+.choice-average-value.positive{
+    color:#008c33;
+}
+
+.choice-average-value.negative{
+    color:#C62828;
+}
+
+.choice-average-count{
+    margin-top:4px;
+    color:#555;
+    font-size:.85rem;
+}
+
+.choice-average-status{
+    margin:12px 0 0;
+    color:#C62828;
+}
+
+@media(max-width:640px){
+    body{
+        padding:16px;
+    }
+
+    .summary-row{
+        grid-template-columns:1fr;
+    }
+
+    .round-panel,
+    .vote-panel{
+        min-height:130px;
+    }
+
+    .team-score-row{
+        grid-template-columns:minmax(72px,1fr) minmax(72px,1.4fr) 64px;
+        gap:8px;
+        font-size:.9rem;
+    }
+}
+
+@media(max-width:360px){
+    .vote-progress{
+        flex-direction:column;
+        gap:8px;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header class="page-header">
+    <h1>Statistics Survivor Dashboard<span id="activeGameCode"
+                                           class="active-game-code"></span></h1>
+    <button id="openGameDialogBtn"
+            class="gear-button"
+            type="button"
+            aria-label="Choose a game"
+            aria-haspopup="dialog"
+            aria-controls="gameSelectionDialog"
+            title="Choose a game">⚙</button>
+</header>
+
+<dialog id="gameSelectionDialog"
+        aria-labelledby="gameSelectionTitle">
+    <div class="dialog-header">
+        <h2 id="gameSelectionTitle">Choose Game</h2>
+        <button id="closeGameDialogBtn"
+                class="dialog-close-button"
+                type="button"
+                aria-label="Close dialog"
+                title="Close dialog">×</button>
+    </div>
+    <div class="game-picker">
+        <label for="gameSelect">Game</label>
+        <select id="gameSelect">
+            <option value="">Loading games...</option>
+        </select>
+        <p id="dashboardStatus"
+           class="status"
+           role="status"
+           aria-live="polite"></p>
+        <button id="loadGameBtn"
+                class="load-game-button"
+                type="button"
+                disabled>Load Game</button>
+    </div>
+</dialog>
+
+<main class="dashboard">
+    <div class="summary-row">
+        <section class="panel round-panel"
+                 aria-labelledby="roundHeading">
+            <h2 id="roundHeading">Current Round</h2>
+            <div id="roundNumber"
+                 class="round-number"
+                 aria-live="polite">—</div>
+        </section>
+
+        <section class="panel vote-panel"
+                 aria-labelledby="voteHeading">
+            <h2 id="voteHeading">Vote Progress</h2>
+            <div class="vote-progress">
+                <div id="voteProgressDial"
+                     class="vote-progress-dial"
+                     role="progressbar"
+                     aria-label="Teams that have voted in the current round"
+                     aria-valuemin="0"
+                     aria-valuemax="100"
+                     aria-valuenow="0"
+                     aria-valuetext="No game selected">
+                    <div class="vote-progress-inner">
+                        <span id="voteProgressPercent"
+                              class="vote-progress-percent">0%</span>
+                        <span id="voteProgressCount"
+                              class="vote-progress-count">0/0 teams</span>
+                    </div>
+                </div>
+                <p id="voteProgressStatus"
+                   class="vote-progress-status"
+                   role="status">Choose a game to see vote progress.</p>
+            </div>
+        </section>
+    </div>
+
+    <section class="panel"
+             aria-labelledby="scoresHeading">
+        <h2 id="scoresHeading">Team Scores</h2>
+        <div class="score-tabs"
+             role="tablist"
+             aria-label="Score views">
+            <button id="teamScoresTab"
+                    class="score-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="true"
+                    aria-controls="teamScoresPanel"
+                    tabindex="0">Team Scores</button>
+            <button id="choiceAveragesTab"
+                    class="score-tab"
+                    type="button"
+                    role="tab"
+                    aria-selected="false"
+                    aria-controls="choiceAveragesPanel"
+                    tabindex="-1">Average Points per Choice</button>
+        </div>
+        <section id="teamScoresPanel"
+                 class="score-tabpanel"
+                 role="tabpanel"
+                 aria-labelledby="teamScoresTab"
+                 tabindex="0">
+            <div id="teamScores"
+                 class="score-chart"
+                 role="list"
+                 aria-label="Team scores"
+                 aria-live="polite">
+                <div class="empty-message">Choose a game to view team scores.</div>
+            </div>
+        </section>
+        <section id="choiceAveragesPanel"
+                 class="score-tabpanel choice-average-section"
+                 role="tabpanel"
+                 aria-labelledby="choiceAveragesTab"
+                 tabindex="0"
+                 hidden>
+            <div class="choice-average-grid"
+                 role="group"
+                 aria-label="Average points by team choice"
+                 aria-live="polite">
+                <div class="choice-average">
+                    <h3>Safe</h3>
+                    <div id="safeAverage"
+                         class="choice-average-value">—</div>
+                    <div id="safeAverageCount"
+                         class="choice-average-count">No logged outcomes</div>
+                </div>
+                <div class="choice-average">
+                    <h3>Explorer</h3>
+                    <div id="explorerAverage"
+                         class="choice-average-value">—</div>
+                    <div id="explorerAverageCount"
+                         class="choice-average-count">No logged outcomes</div>
+                </div>
+                <div class="choice-average">
+                    <h3>Treasure</h3>
+                    <div id="treasureAverage"
+                         class="choice-average-value">—</div>
+                    <div id="treasureAverageCount"
+                         class="choice-average-count">No logged outcomes</div>
+                </div>
+            </div>
+            <p id="choiceAverageStatus"
+               class="choice-average-status"
+               role="status"
+               aria-live="polite"></p>
+        </section>
+    </section>
+</main>
+
+<script type="module">
+
+import {
+    collection,
+    db,
+    doc,
+    onSnapshot
+}
+from "./firebase.js";
+
+const gameSelect =
+document.getElementById("gameSelect");
+const gameSelectionDialog =
+document.getElementById("gameSelectionDialog");
+const loadGameButton =
+document.getElementById("loadGameBtn");
+const dashboardStatus =
+document.getElementById("dashboardStatus");
+const activeGameCode =
+document.getElementById("activeGameCode");
+const roundNumber =
+document.getElementById("roundNumber");
+const voteProgressDial =
+document.getElementById("voteProgressDial");
+const voteProgressPercent =
+document.getElementById("voteProgressPercent");
+const voteProgressCount =
+document.getElementById("voteProgressCount");
+const voteProgressStatus =
+document.getElementById("voteProgressStatus");
+const teamScores =
+document.getElementById("teamScores");
+const choiceAverageStatus =
+document.getElementById("choiceAverageStatus");
+const scoreTabs =
+Array.from(document.querySelectorAll('[role="tab"]'));
+
+const CHOICES = [
+    { name:"Safe", key:"safe" },
+    { name:"Explorer", key:"explorer" },
+    { name:"Treasure", key:"treasure" }
+];
+
+let selectedGameCode = null;
+let pendingGameCode = null;
+let currentTeams = [];
+let currentRound = null;
+let currentRoundVotes = new Set();
+let roundVotesLoaded = false;
+let votingOpen = false;
+let roundError = null;
+let voteProgressErrors = new Map();
+let unsubscribeGame = null;
+let unsubscribeTeams = null;
+let unsubscribeResults = null;
+let unsubscribeRoundVotes = null;
+let unsubscribeLegacyRoundVotes = null;
+
+function setStatus(message){
+    dashboardStatus.textContent = message;
+}
+
+function activateScoreTab(index, moveFocus = false){
+    scoreTabs.forEach((tab, tabIndex)=>{
+        const isSelected = tabIndex === index;
+        const panel =
+            document.getElementById(tab.getAttribute("aria-controls"));
+
+        tab.setAttribute("aria-selected", String(isSelected));
+        tab.tabIndex = isSelected ? 0 : -1;
+        panel.hidden = !isSelected;
+    });
+
+    if(moveFocus)
+        scoreTabs[index].focus();
+}
+
+scoreTabs.forEach((tab, index)=>{
+    tab.addEventListener("click", ()=>activateScoreTab(index));
+    tab.addEventListener("keydown", event=>{
+        let nextIndex = null;
+
+        if(event.key === "ArrowRight")
+            nextIndex = (index + 1) % scoreTabs.length;
+        else if(event.key === "ArrowLeft")
+            nextIndex = (index - 1 + scoreTabs.length) % scoreTabs.length;
+        else if(event.key === "Home")
+            nextIndex = 0;
+        else if(event.key === "End")
+            nextIndex = scoreTabs.length - 1;
+
+        if(nextIndex !== null){
+            event.preventDefault();
+            activateScoreTab(nextIndex, true);
+        }
+    });
+});
+
+function stopSelectedGameListeners(){
+    unsubscribeGame?.();
+    unsubscribeTeams?.();
+    unsubscribeResults?.();
+    unsubscribeRoundVotes?.();
+    unsubscribeLegacyRoundVotes?.();
+    unsubscribeGame = null;
+    unsubscribeTeams = null;
+    unsubscribeResults = null;
+    unsubscribeRoundVotes = null;
+    unsubscribeLegacyRoundVotes = null;
+    currentTeams = [];
+    currentRound = null;
+    currentRoundVotes = new Set();
+    roundVotesLoaded = false;
+    votingOpen = false;
+    roundError = null;
+    voteProgressErrors = new Map();
+}
+
+function showEmptyTeamMessage(message){
+    const item = document.createElement("div");
+    item.className = "empty-message";
+    item.setAttribute("role", "listitem");
+    item.textContent = message;
+    teamScores.replaceChildren(item);
+}
+
+function renderTeamScores(teams){
+    if(teams.length === 0){
+        showEmptyTeamMessage("No teams have joined this game yet.");
+        return;
+    }
+
+    const scoreFor = team=>
+        Number.isFinite(team.score) ? team.score : 100;
+    const sortedTeams =
+        teams
+            .slice()
+            .sort((a, b)=>
+                scoreFor(b) - scoreFor(a) ||
+                String(a.name ?? "").localeCompare(
+                    String(b.name ?? ""),
+                    undefined,
+                    { sensitivity:"base" }
+                )
+            );
+    const scores = sortedTeams.map(scoreFor);
+    const minScore = Math.min(0, ...scores);
+    const maxScore = Math.max(0, ...scores);
+    const scoreRange = maxScore - minScore || 1;
+    const zeroPosition = (0 - minScore) / scoreRange * 100;
+
+    const items =
+        sortedTeams.map((team, index)=>{
+            const item = document.createElement("div");
+            const label = document.createElement("div");
+            const name = document.createElement("span");
+            const track = document.createElement("div");
+            const bar = document.createElement("div");
+            const score = document.createElement("span");
+            const teamScore = scores[index];
+            const barStart =
+                teamScore >= 0
+                    ? zeroPosition
+                    : (teamScore - minScore) / scoreRange * 100;
+            const barWidth = Math.abs(teamScore) / scoreRange * 100;
+
+            item.className = "team-score-row";
+            item.setAttribute("role", "listitem");
+            label.className = "team-score-label";
+            name.className = "team-name";
+            name.textContent = team.name ?? "Unnamed team";
+            track.className = "team-score-track";
+            track.setAttribute("aria-hidden", "true");
+            track.style.setProperty("--zero-position", `${zeroPosition}%`);
+            bar.className = "team-score-bar";
+            bar.classList.toggle("negative", teamScore < 0);
+            bar.style.setProperty("--bar-left", `${barStart}%`);
+            bar.style.setProperty("--bar-width", `${barWidth}%`);
+            score.className = "team-score-value";
+            score.textContent = String(teamScore);
+            label.append(name);
+            track.append(bar);
+            item.append(label, track, score);
+            return item;
+        });
+
+    teamScores.replaceChildren(...items);
+}
+
+function renderChoiceAverages(results){
+    const averages = new Map(
+        CHOICES.map(choice=>[
+            choice.name,
+            { total:0, count:0 }
+        ])
+    );
+
+    results.forEach(result=>{
+        const stats = averages.get(result.choice);
+        if(!stats || !Number.isFinite(result.delta))
+            return;
+
+        stats.total += result.delta;
+        stats.count++;
+    });
+
+    CHOICES.forEach(choice=>{
+        const stats = averages.get(choice.name);
+        const averageElement =
+            document.getElementById(`${choice.key}Average`);
+        const countElement =
+            document.getElementById(`${choice.key}AverageCount`);
+
+        averageElement.classList.remove("positive", "negative");
+        if(stats.count === 0){
+            averageElement.textContent = "—";
+            countElement.textContent = "No logged outcomes";
+            return;
+        }
+
+        const average = stats.total / stats.count;
+        const formatted =
+            `${average > 0 ? "+" : ""}${average.toFixed(1)}`;
+
+        averageElement.textContent = `${formatted} points`;
+        averageElement.classList.toggle("positive", average > 0);
+        averageElement.classList.toggle("negative", average < 0);
+        countElement.textContent =
+            `${stats.count} logged team-round ` +
+            `${stats.count === 1 ? "outcome" : "outcomes"}`;
+    });
+}
+
+function listenForResults(gameCode){
+    unsubscribeResults =
+    onSnapshot(
+        collection(db, "games", gameCode, "results"),
+        snapshot=>{
+            if(selectedGameCode !== gameCode)
+                return;
+
+            const results =
+                snapshot.docs.map(resultDocument=>resultDocument.data());
+            renderChoiceAverages(results);
+            choiceAverageStatus.textContent = "";
+        },
+        error=>{
+            if(selectedGameCode === gameCode){
+                choiceAverageStatus.textContent =
+                    `Unable to load round results: ${error.message}`;
+            }
+        }
+    );
+}
+
+function getVoteRoundIds(round){
+    const paddedRoundId =
+        `round${String(round).padStart(2, "0")}`;
+    const legacyRoundId = `round${round}`;
+
+    return paddedRoundId === legacyRoundId
+        ? [paddedRoundId]
+        : [paddedRoundId, legacyRoundId];
+}
+
+function updateVoteProgress(){
+    const teamIds = new Set(currentTeams.map(team=>team.id));
+    const votedCount =
+        [...currentRoundVotes]
+            .filter(teamId=>teamIds.has(teamId))
+            .length;
+    const teamCount = currentTeams.length;
+    const percent =
+        teamCount === 0
+            ? 0
+            : Math.round(votedCount / teamCount * 100);
+
+    voteProgressDial.style.setProperty("--vote-progress", `${percent}%`);
+    voteProgressDial.setAttribute("aria-valuenow", percent);
+    voteProgressDial.setAttribute(
+        "aria-valuetext",
+        `${percent}%; ${votedCount} of ${teamCount} teams have voted`
+    );
+    voteProgressPercent.textContent = `${percent}%`;
+    voteProgressCount.textContent = `${votedCount}/${teamCount} teams`;
+
+    if(roundError){
+        voteProgressStatus.textContent = roundError;
+    }else if(voteProgressErrors.size){
+        voteProgressStatus.textContent =
+            voteProgressErrors.values().next().value;
+    }else if(currentRound === null){
+        voteProgressStatus.textContent =
+            selectedGameCode
+                ? "Loading the current round..."
+                : "Choose a game to see vote progress.";
+    }else if(!roundVotesLoaded){
+        voteProgressStatus.textContent =
+            `Loading vote progress for round ${currentRound}...`;
+    }else if(teamCount === 0){
+        voteProgressStatus.textContent = "No teams have joined this game.";
+    }else{
+        voteProgressStatus.textContent =
+            `Round ${currentRound} · Voting ${votingOpen ? "open" : "closed"}`;
+    }
+}
+
+function listenForRoundVotes(gameCode, round){
+    unsubscribeRoundVotes?.();
+    unsubscribeLegacyRoundVotes?.();
+    currentRound = round;
+    currentRoundVotes = new Set();
+    roundVotesLoaded = false;
+    voteProgressErrors = new Map();
+    updateVoteProgress();
+
+    const voteRoundIds = getVoteRoundIds(round);
+    const snapshotsByRound = new Map();
+    const subscriptions =
+        voteRoundIds.map(roundId=>
+            onSnapshot(
+                collection(
+                    db,
+                    "games",
+                    gameCode,
+                    "votes",
+                    roundId,
+                    "teams"
+                ),
+                snapshot=>{
+                    if(selectedGameCode !== gameCode || currentRound !== round)
+                        return;
+
+                    snapshotsByRound.set(
+                        roundId,
+                        new Set(snapshot.docs.map(voteDoc=>voteDoc.id))
+                    );
+                    currentRoundVotes = new Set(
+                        [...snapshotsByRound.values()]
+                            .flatMap(teamIds=>[...teamIds])
+                    );
+                    roundVotesLoaded =
+                        snapshotsByRound.size === voteRoundIds.length;
+                    voteProgressErrors.delete(roundId);
+                    updateVoteProgress();
+                },
+                error=>{
+                    if(selectedGameCode !== gameCode || currentRound !== round)
+                        return;
+
+                    voteProgressErrors.set(
+                        roundId,
+                        `Unable to load vote progress: ${error.message}`
+                    );
+                    updateVoteProgress();
+                }
+            )
+        );
+
+    unsubscribeRoundVotes = subscriptions[0] ?? null;
+    unsubscribeLegacyRoundVotes = subscriptions[1] ?? null;
+}
+
+function selectGame(gameCode){
+    stopSelectedGameListeners();
+    selectedGameCode = gameCode || null;
+    pendingGameCode = selectedGameCode;
+    activeGameCode.textContent =
+        selectedGameCode ? `: ${selectedGameCode}` : "";
+    roundNumber.textContent = "—";
+    showEmptyTeamMessage(
+        selectedGameCode
+            ? "Loading team scores..."
+            : "Choose a game to view team scores."
+    );
+    renderChoiceAverages([]);
+    choiceAverageStatus.textContent = "";
+    updateVoteProgress();
+
+    if(!selectedGameCode){
+        setStatus("");
+        return;
+    }
+
+    setStatus("Loading dashboard...");
+
+    unsubscribeGame =
+    onSnapshot(
+        doc(db, "games", selectedGameCode),
+        snapshot=>{
+            if(selectedGameCode !== gameCode)
+                return;
+
+            if(!snapshot.exists()){
+                roundNumber.textContent = "—";
+                roundError = "This game is no longer available.";
+                updateVoteProgress();
+                return;
+            }
+
+            const game = snapshot.data();
+            const round = game.round ?? 1;
+
+            roundNumber.textContent = String(round);
+            roundError = null;
+            votingOpen = game.votingOpen === true;
+
+            if(currentRound !== round)
+                listenForRoundVotes(gameCode, round);
+
+            updateVoteProgress();
+        },
+        error=>{
+            if(selectedGameCode === gameCode){
+                roundError =
+                    `Unable to load the current round: ${error.message}`;
+                updateVoteProgress();
+            }
+        }
+    );
+
+    unsubscribeTeams =
+    onSnapshot(
+        collection(db, "games", selectedGameCode, "teams"),
+        snapshot=>{
+            if(selectedGameCode !== gameCode)
+                return;
+
+            const teams =
+                snapshot.docs.map(teamDocument=>({
+                    ...teamDocument.data(),
+                    id:teamDocument.id
+                }));
+            currentTeams = teams;
+            renderTeamScores(teams);
+            updateVoteProgress();
+            setStatus("");
+        },
+        error=>{
+            if(selectedGameCode === gameCode){
+                const message =
+                    `Unable to load team scores: ${error.message}`;
+                showEmptyTeamMessage(message);
+                setStatus(`Unable to load team scores: ${error.message}`);
+            }
+        }
+    );
+
+    listenForResults(gameCode);
+}
+
+function resetPendingGameSelection(){
+    pendingGameCode = selectedGameCode;
+    gameSelect.value = selectedGameCode ?? "";
+    loadGameButton.disabled = !pendingGameCode;
+}
+
+function openGameSelectionDialog(){
+    resetPendingGameSelection();
+    gameSelectionDialog.showModal();
+}
+
+function loadSelectedGame(){
+    if(!pendingGameCode){
+        setStatus("Choose a game to load.");
+        return;
+    }
+
+    selectGame(pendingGameCode);
+    gameSelectionDialog.close();
+}
+
+gameSelect.addEventListener("change", ()=>{
+    pendingGameCode = gameSelect.value || null;
+    loadGameButton.disabled = !pendingGameCode;
+    setStatus(
+        pendingGameCode
+            ? `Selected ${pendingGameCode}. Click Load Game to continue.`
+            : "Choose a game to load."
+    );
+});
+
+document
+.getElementById("openGameDialogBtn")
+.addEventListener("click", openGameSelectionDialog);
+
+document
+.getElementById("closeGameDialogBtn")
+.addEventListener("click", ()=>gameSelectionDialog.close());
+
+gameSelectionDialog.addEventListener(
+    "close",
+    resetPendingGameSelection
+);
+
+loadGameButton.addEventListener("click", loadSelectedGame);
+
+onSnapshot(
+    collection(db, "games"),
+    snapshot=>{
+        const games =
+            snapshot.docs
+                .slice()
+                .sort((a, b)=>a.id.localeCompare(b.id));
+        const availableGameCodes =
+            games.map(game=>game.id);
+        const previousPendingGame = pendingGameCode ?? selectedGameCode;
+        const activeGameExists =
+            selectedGameCode !== null &&
+            availableGameCodes.includes(selectedGameCode);
+        const placeholder = document.createElement("option");
+
+        placeholder.value = "";
+        placeholder.textContent = "Choose a game";
+        gameSelect.replaceChildren(placeholder);
+
+        games.forEach(game=>{
+            const option = document.createElement("option");
+            option.value = game.id;
+            option.textContent = game.id;
+            gameSelect.append(option);
+        });
+
+        if(selectedGameCode && !activeGameExists){
+            stopSelectedGameListeners();
+            selectedGameCode = null;
+            activeGameCode.textContent = "";
+            roundNumber.textContent = "—";
+            showEmptyTeamMessage("Choose a game to view team scores.");
+            renderChoiceAverages([]);
+            choiceAverageStatus.textContent = "";
+            updateVoteProgress();
+        }
+
+        const pendingGameExists =
+            previousPendingGame !== null &&
+            availableGameCodes.includes(previousPendingGame);
+
+        if(pendingGameExists){
+            pendingGameCode = previousPendingGame;
+            gameSelect.value = previousPendingGame;
+        }else if(selectedGameCode){
+            pendingGameCode = selectedGameCode;
+            gameSelect.value = selectedGameCode;
+        }else{
+            pendingGameCode = null;
+            gameSelect.value = "";
+        }
+
+        loadGameButton.disabled = !pendingGameCode;
+
+        if(previousPendingGame && !pendingGameExists){
+            setStatus("The selected game is no longer available.");
+        }else{
+            setStatus(
+                pendingGameCode
+                    ? `Selected ${pendingGameCode}. Click Load Game to continue.`
+                    : games.length
+                        ? "Choose a game to load."
+                        : "No games are available."
+            );
+        }
+    },
+    error=>{
+        setStatus(`Unable to load games: ${error.message}`);
+    }
+);
+
+</script>
+
+</body>
+
+</html>

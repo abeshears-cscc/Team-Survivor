@@ -144,12 +144,22 @@ button:focus-visible{
     outline-offset:2px;
 }
 
+.score-display{
+    display:flex;
+    align-items:stretch;
+    gap:12px;
+    max-width:432px;
+    margin:1em 0;
+}
+
 .current-score{
     display:flex;
     align-items:center;
     justify-content:space-between;
     gap:16px;
+    flex:1;
     max-width:320px;
+    margin:0;
     padding:16px 20px;
     border-radius:8px;
     background:#002E5D;
@@ -159,6 +169,219 @@ button:focus-visible{
 
 .current-score span{
     font-size:1.8rem;
+}
+
+.score-change{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0;
+    padding:16px 18px;
+    border-radius:8px;
+    color:white;
+    font-size:1.5rem;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.score-change.hidden{
+    display:none;
+}
+
+.score-change[data-change="increase"]{
+    background:#00B140;
+}
+
+.score-change[data-change="decrease"]{
+    background:#c62828;
+}
+
+.reward-progress{
+    display:flex;
+    justify-content:center;
+    width:100%;
+    max-width:100%;
+    padding:0;
+    margin:16px auto 20px;
+}
+
+.reward-dial{
+    --reward-success-angle:0deg;
+    --reward-roll-angle:210deg;
+    position:relative;
+    flex:0 0 160px;
+    width:160px;
+    height:160px;
+    border-radius:50%;
+}
+
+.reward-dial::before{
+    position:absolute;
+    inset:0;
+    border-radius:50%;
+    background:conic-gradient(
+        from 210deg,
+        #00B140 0deg var(--reward-success-angle),
+        #d8dce2 var(--reward-success-angle) 300deg,
+        transparent 300deg 360deg
+    );
+    content:"";
+}
+
+.reward-dial-face{
+    position:relative;
+    display:grid;
+    z-index:1;
+    width:132px;
+    height:132px;
+    margin:14px;
+    place-items:center;
+    border-radius:50%;
+    background:white;
+}
+
+.reward-scale-marker{
+    position:absolute;
+    z-index:3;
+    top:calc(50% - 8px);
+    left:calc(50% - 2px);
+    width:4px;
+    height:16px;
+    border-radius:2px;
+    background:#000;
+}
+
+.reward-scale-marker-0{
+    transform:rotate(210deg) translateY(-73px);
+}
+
+.reward-scale-marker-15{
+    transform:rotate(255deg) translateY(-73px);
+}
+
+.reward-scale-marker-60{
+    transform:rotate(390deg) translateY(-73px);
+}
+
+.reward-scale-marker-100{
+    transform:rotate(510deg) translateY(-73px);
+}
+
+.reward-scale-value{
+    position:absolute;
+    z-index:4;
+    color:#000;
+    font-size:.62rem;
+    font-weight:bold;
+    transform:translate(-50%,-50%);
+}
+
+.reward-scale-value-0{
+    top:113px;
+    left:39px;
+}
+
+.reward-scale-value-15{
+    top:80px;
+    left:20px;
+    padding:1px 3px;
+    border-radius:2px;
+    background:white;
+}
+
+.reward-scale-value-60{
+    top:19px;
+    left:93px;
+}
+
+.reward-scale-value-100{
+    top:113px;
+    left:93px;
+}
+
+.reward-needle{
+    position:absolute;
+    z-index:5;
+    top:calc(50% - 64px);
+    left:calc(50% - 2px);
+    display:none;
+    width:4px;
+    height:64px;
+    border-radius:4px;
+    background:#002E5D;
+    transform:rotate(var(--reward-roll-angle));
+    transform-origin:50% 100%;
+    transition:transform 1.8s cubic-bezier(.2,.7,.2,1);
+}
+
+.reward-dial.has-needle .reward-needle{
+    display:block;
+}
+
+.reward-dial-hub{
+    position:absolute;
+    z-index:6;
+    top:calc(50% - 7px);
+    left:calc(50% - 7px);
+    width:14px;
+    height:14px;
+    border:2px solid white;
+    border-radius:50%;
+    background:#002E5D;
+}
+
+.reward-dial-readout{
+    position:absolute;
+    z-index:7;
+    bottom:28px;
+    left:50%;
+    display:flex;
+    justify-content:center;
+    transform:translateX(-50%);
+}
+
+.reward-dial-readout-value{
+    color:#002E5D;
+    font-size:1.2rem;
+    font-weight:bold;
+    white-space:nowrap;
+}
+
+.reward-dial-readout-value[data-outcome="rewarded"]{
+    color:#008c33;
+}
+
+.reward-dial-readout-value[data-outcome="missed"],
+.reward-dial-readout-value[data-outcome="error"]{
+    color:#C62828;
+}
+
+.confetti-layer{
+    position:fixed;
+    inset:0;
+    z-index:1000;
+    overflow:hidden;
+    pointer-events:none;
+}
+
+.confetti-piece{
+    position:absolute;
+    top:-14px;
+    width:9px;
+    height:14px;
+    animation:confetti-fall 2.8s linear forwards;
+}
+
+@keyframes confetti-fall{
+    from{
+        opacity:1;
+        transform:translate3d(0,-14px,0) rotate(0deg);
+    }
+
+    to{
+        opacity:0;
+        transform:translate3d(var(--drift),105vh,0) rotate(var(--rotation));
+    }
 }
 
 .vote{
@@ -226,8 +449,23 @@ button:focus-visible{
         font-size:1.6rem;
     }
 
+    .score-display{
+        max-width:none;
+    }
+
     .current-score{
         max-width:none;
+    }
+
+}
+
+@media(prefers-reduced-motion: reduce){
+    .reward-needle{
+        transition:none;
+    }
+
+    .confetti-piece{
+        animation:none;
     }
 }
 
@@ -249,6 +487,10 @@ button:focus-visible{
             title="Join a game">⚙</button>
 </header>
 
+<div id="confettiLayer"
+     class="confetti-layer"
+     aria-hidden="true"></div>
+
 <dialog id="joinDialog"
         aria-labelledby="joinDialogTitle">
 
@@ -263,8 +505,7 @@ button:focus-visible{
 
     <label for="gameCode">Game Code</label>
 
-    <input id="gameCode"
-           value="testgame">
+    <input id="gameCode">
 
     <label for="teamName">Team Name</label>
 
@@ -288,10 +529,53 @@ button:focus-visible{
 
     <h2 id="teamTitle"></h2>
 
-    <p class="current-score">
-        Current Score:
-        <span id="score">100</span>
-    </p>
+    <div class="score-display">
+        <p class="current-score">
+            Current Score:
+            <span id="score">100</span>
+        </p>
+        <p id="scoreChange"
+           class="score-change hidden"
+           aria-live="polite"
+           aria-atomic="true"></p>
+    </div>
+
+    <section class="reward-progress"
+             aria-label="Reward chance speedometer">
+        <div id="rewardDial"
+             class="reward-dial"
+             role="img"
+             aria-label="Choose an expedition to see the reward chance and roll">
+            <div class="reward-dial-face">
+                 <span class="reward-scale-marker reward-scale-marker-0"
+                       aria-hidden="true"></span>
+                 <span class="reward-scale-marker reward-scale-marker-15"
+                       aria-hidden="true"></span>
+                 <span class="reward-scale-marker reward-scale-marker-60"
+                       aria-hidden="true"></span>
+                 <span class="reward-scale-marker reward-scale-marker-100"
+                       aria-hidden="true"></span>
+                 <span class="reward-scale-value reward-scale-value-0"
+                       aria-hidden="true">0%</span>
+                 <span class="reward-scale-value reward-scale-value-15"
+                       aria-hidden="true">15%</span>
+                 <span class="reward-scale-value reward-scale-value-60"
+                       aria-hidden="true">60%</span>
+                 <span class="reward-scale-value reward-scale-value-100"
+                       aria-hidden="true">100%</span>
+                <span id="rewardNeedle"
+                      class="reward-needle"
+                      aria-hidden="true"></span>
+                <span class="reward-dial-hub"
+                      aria-hidden="true"></span>
+                <div class="reward-dial-readout"
+                     aria-hidden="true">
+                    <strong id="rewardRollValue"
+                            class="reward-dial-readout-value">—</strong>
+                </div>
+            </div>
+        </div>
+    </section>
 
     <h3>Choose Expedition</h3>
 
@@ -360,11 +644,25 @@ let votingOpen = false;
 let voteLoaded = false;
 let votedChoice = null;
 let submittingVote = false;
+let latestTeamResult = null;
+let currentTeamScore = null;
+let pendingScoreIncreaseConfetti = false;
+let confettiFallbackReady = false;
+let confettiFallbackTimer = null;
+let rewardNeedleAnimating = false;
+let rewardNeedleAnimationTimer = null;
+let confettiTimeout = null;
 let unsubscribeScore = null;
 let unsubscribeGame = null;
 let unsubscribeVote = null;
 let unsubscribeLegacyVote = null;
 let unsubscribeResults = null;
+
+const REWARD_CHANCES = {
+    Safe:1,
+    Explorer:0.6,
+    Treasure:0.15
+};
 
 const voteButtons =
 document.querySelectorAll(".vote");
@@ -378,6 +676,19 @@ const teamNameInput =
 document.getElementById("teamName");
 const joinStatus =
 document.getElementById("joinStatus");
+const rewardNeedleElement =
+document.getElementById("rewardNeedle");
+
+const REWARD_NEEDLE_TRANSITION_MS = 1800;
+
+rewardNeedleElement.addEventListener(
+    "transitionend",
+    event=>{
+        if(event.target === rewardNeedleElement &&
+           event.propertyName === "transform")
+            finishRewardNeedleAnimation();
+    }
+);
 
 function getVoteRoundIds(round){
 
@@ -640,6 +951,8 @@ function openJoinDialog(){
 
 function listenForScore(){
 
+    let previousScore = null;
+
     unsubscribeScore =
     onSnapshot(
 
@@ -658,16 +971,333 @@ function listenForScore(){
                 return;
             }
 
-            document
-            .getElementById(
-                "score"
-            )
-            .innerText =
-            snap.data().score;
+            const score = snap.data().score;
+            currentTeamScore =
+                typeof score === "number" ? score : null;
+            const scoreElement =
+                document.getElementById("score");
+            const scoreChangeElement =
+                document.getElementById("scoreChange");
+            const scoreChange =
+                typeof previousScore === "number" &&
+                typeof score === "number"
+                    ? score - previousScore
+                    : null;
+
+            scoreElement.textContent = score;
+
+            if(scoreChange){
+                scoreChangeElement.textContent =
+                    `${scoreChange > 0 ? "+" : ""}${scoreChange}`;
+                scoreChangeElement.dataset.change =
+                    scoreChange > 0 ? "increase" : "decrease";
+                scoreChangeElement.classList.remove("hidden");
+
+                if(scoreChange > 0)
+                    queueScoreIncreaseConfetti();
+            }else{
+                scoreChangeElement.textContent = "";
+                scoreChangeElement.classList.add("hidden");
+                delete scoreChangeElement.dataset.change;
+            }
+
+            previousScore =
+                typeof score === "number" ? score : null;
 
         }
 
     );
+}
+
+function showConfetti(){
+
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+        return;
+
+    const confettiLayer =
+        document.getElementById("confettiLayer");
+    const colors = ["#00B140", "#FFD700", "#FF6B6B", "#4D96FF", "#B967FF"];
+    const pieces = document.createDocumentFragment();
+
+    if(confettiTimeout !== null)
+        window.clearTimeout(confettiTimeout);
+
+    confettiLayer.replaceChildren();
+
+    for(let i = 0; i < 60; i++){
+        const piece = document.createElement("span");
+        piece.className = "confetti-piece";
+        piece.style.left = `${Math.random() * 100}%`;
+        piece.style.backgroundColor =
+            colors[Math.floor(Math.random() * colors.length)];
+        piece.style.animationDelay = `${Math.random() * 0.25}s`;
+        piece.style.setProperty(
+            "--drift",
+            `${Math.random() * 240 - 120}px`
+        );
+        piece.style.setProperty(
+            "--rotation",
+            `${Math.random() * 1080 - 540}deg`
+        );
+        pieces.append(piece);
+    }
+
+    confettiLayer.append(pieces);
+    confettiTimeout =
+        window.setTimeout(()=>{
+            confettiLayer.replaceChildren();
+            confettiTimeout = null;
+        }, 3600);
+}
+
+function maybeShowPendingConfetti(){
+
+    if(!pendingScoreIncreaseConfetti ||
+       rewardNeedleAnimating)
+        return;
+
+    const resultMatchesScore =
+        latestTeamResult &&
+        currentTeamScore !== null &&
+        latestTeamResult.score === currentTeamScore;
+
+    if(!resultMatchesScore && !confettiFallbackReady)
+        return;
+
+    pendingScoreIncreaseConfetti = false;
+    confettiFallbackReady = false;
+
+    if(confettiFallbackTimer !== null){
+        window.clearTimeout(confettiFallbackTimer);
+        confettiFallbackTimer = null;
+    }
+
+    showConfetti();
+}
+
+function queueScoreIncreaseConfetti(){
+
+    pendingScoreIncreaseConfetti = true;
+    confettiFallbackReady = false;
+
+    if(confettiFallbackTimer !== null)
+        window.clearTimeout(confettiFallbackTimer);
+
+    confettiFallbackTimer =
+        window.setTimeout(()=>{
+            confettiFallbackTimer = null;
+            confettiFallbackReady = true;
+            maybeShowPendingConfetti();
+        }, REWARD_NEEDLE_TRANSITION_MS + 500);
+
+    maybeShowPendingConfetti();
+}
+
+function finishRewardNeedleAnimation(){
+
+    if(rewardNeedleAnimationTimer !== null){
+        window.clearTimeout(rewardNeedleAnimationTimer);
+        rewardNeedleAnimationTimer = null;
+    }
+
+    rewardNeedleAnimating = false;
+    maybeShowPendingConfetti();
+}
+
+function hideRewardNeedle(){
+
+    const dial = document.getElementById("rewardDial");
+
+    dial.classList.remove("has-needle");
+    dial.style.setProperty("--reward-roll-angle", "210deg");
+
+    if(rewardNeedleAnimationTimer !== null){
+        window.clearTimeout(rewardNeedleAnimationTimer);
+        rewardNeedleAnimationTimer = null;
+    }
+
+    rewardNeedleAnimating = false;
+    maybeShowPendingConfetti();
+}
+
+function setRewardNeedlePosition(roll){
+
+    const dial = document.getElementById("rewardDial");
+    const targetAngle = `${210 + roll * 300}deg`;
+
+    if(!dial.classList.contains("has-needle")){
+        dial.style.setProperty("--reward-roll-angle", "210deg");
+        dial.classList.add("has-needle");
+        rewardNeedleElement.getBoundingClientRect();
+    }
+
+    if(dial.style.getPropertyValue("--reward-roll-angle") === targetAngle){
+        maybeShowPendingConfetti();
+        return;
+    }
+
+    if(window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+        dial.style.setProperty("--reward-roll-angle", targetAngle);
+        finishRewardNeedleAnimation();
+        return;
+    }
+
+    rewardNeedleAnimating = true;
+
+    if(rewardNeedleAnimationTimer !== null)
+        window.clearTimeout(rewardNeedleAnimationTimer);
+
+    rewardNeedleAnimationTimer =
+        window.setTimeout(
+            finishRewardNeedleAnimation,
+            REWARD_NEEDLE_TRANSITION_MS + 250
+        );
+
+    dial.style.setProperty("--reward-roll-angle", targetAngle);
+}
+
+function renderRewardDial(choice, result = null){
+
+    const dial = document.getElementById("rewardDial");
+    const rollValue =
+        document.getElementById("rewardRollValue");
+
+    if(!Object.prototype.hasOwnProperty.call(REWARD_CHANCES, choice)){
+        dial.classList.remove("has-choice");
+        rollValue.removeAttribute("data-outcome");
+        dial.style.setProperty("--reward-success-angle", "0deg");
+        hideRewardNeedle();
+        dial.setAttribute(
+            "aria-label",
+            "Choose an expedition to see reward chance and random roll. " +
+            "The scale marks 0%, 15%, 60%, and 100%."
+        );
+        rollValue.textContent = "—";
+        return;
+    }
+
+    const chance =
+        Number.isFinite(result?.rewardChance) &&
+        result.rewardChance >= 0 &&
+        result.rewardChance <= 1
+            ? result.rewardChance
+            : REWARD_CHANCES[choice];
+    const chancePercent = Math.round(chance * 100);
+
+    dial.classList.add("has-choice");
+    dial.style.setProperty(
+        "--reward-success-angle",
+        `${chance * 300}deg`
+    );
+    rollValue.removeAttribute("data-outcome");
+
+    if(choice === "Safe"){
+        const hasRecordedSafeRoll =
+            Number.isFinite(result?.roll) &&
+            result.roll >= 0 &&
+            result.roll < 1;
+
+        const safePointerPercent = hasRecordedSafeRoll
+            ? Math.round(result.roll * 100)
+            : 0;
+        rollValue.textContent = `${safePointerPercent}%`;
+        rollValue.dataset.outcome = "rewarded";
+        setRewardNeedlePosition(
+            hasRecordedSafeRoll ? result.roll : 0
+        );
+        const rollDescription =
+            hasRecordedSafeRoll
+                ? `random roll ${result.roll}`
+                : "random roll pending at 0%";
+        dial.setAttribute(
+            "aria-label",
+            `Safe expedition: guaranteed 100% reward chance; ` +
+            `${rollDescription}. ` +
+            "Scale marks 0%, 15%, 60%, and 100%."
+        );
+        return;
+    }
+
+    const hasRecordedRoll =
+        Number.isFinite(result?.roll) &&
+        result.roll >= 0 &&
+        result.roll < 1;
+
+    if(hasRecordedRoll){
+        rollValue.textContent =
+            `${Math.round(result.roll * 100)}%`;
+        rollValue.dataset.outcome =
+            result.delta > 0 ? "rewarded" : "missed";
+        setRewardNeedlePosition(result.roll);
+
+        const outcome =
+            result.delta > 0
+                ? `rewarded +${result.delta} points`
+                : `punished ${result.delta} points`;
+        dial.setAttribute(
+            "aria-label",
+            `${choice} expedition. Reward chance ${chancePercent}%. ` +
+            `Random roll ${result.roll}. Team was ${outcome}. ` +
+            "Scale marks 0%, 15%, 60%, and 100%."
+        );
+    }else{
+        rollValue.textContent = "—";
+        if(result)
+            hideRewardNeedle();
+        else
+            setRewardNeedlePosition(0);
+        dial.setAttribute(
+            "aria-label",
+            result
+                ? `${choice} expedition. Reward chance ${chancePercent}%. ` +
+                  `Random roll was not saved; result ${result.delta} points. ` +
+                  "Scale marks 0%, 15%, 60%, and 100%."
+                : `${choice} expedition. Reward chance ${chancePercent}%. ` +
+                  "Random roll pending. Scale marks 0%, 15%, 60%, and 100%."
+        );
+    }
+}
+
+function resetRewardDialForVoting(){
+
+    const dial = document.getElementById("rewardDial");
+    const rollValue =
+        document.getElementById("rewardRollValue");
+
+    dial.classList.remove("has-choice");
+    dial.style.setProperty("--reward-success-angle", "0deg");
+    rollValue.removeAttribute("data-outcome");
+    rollValue.textContent = "0%";
+    setRewardNeedlePosition(0);
+    dial.setAttribute(
+        "aria-label",
+        "Voting is open. Random roll resets to 0%. " +
+        "Scale marks 0%, 15%, 60%, and 100%."
+    );
+}
+
+function updateRewardDial(){
+
+    if(votingOpen && !votedChoice){
+        resetRewardDialForVoting();
+        return;
+    }
+
+    const resultForCurrentRound =
+        latestTeamResult &&
+        currentRound !== null &&
+        latestTeamResult.round === currentRound;
+    const result =
+        resultForCurrentRound || !votedChoice
+            ? latestTeamResult
+            : null;
+    const choice =
+        result?.choice ??
+        votedChoice ??
+        latestTeamResult?.choice ??
+        null;
+
+    renderRewardDial(choice, result);
 }
 
 function handleTeamRemoved(){
@@ -701,15 +1331,17 @@ function handleTeamRemoved(){
 
 function listenForRoundResults(){
 
+    const listeningGameCode = gameCode;
+    const listeningTeamId = teamId;
     const resultsQuery =
     query(
         collection(
             db,
             "games",
-            gameCode,
+            listeningGameCode,
             "results"
         ),
-        where("teamId", "==", teamId)
+        where("teamId", "==", listeningTeamId)
     );
 
     unsubscribeResults =
@@ -718,6 +1350,10 @@ function listenForRoundResults(){
         resultsQuery,
 
         snap=>{
+
+            if(gameCode !== listeningGameCode ||
+               teamId !== listeningTeamId)
+                return;
 
             const results =
             snap.docs
@@ -731,6 +1367,9 @@ function listenForRoundResults(){
             document.getElementById("roundResults");
 
             resultsContainer.replaceChildren();
+            latestTeamResult = results[0] ?? null;
+            updateRewardDial();
+            maybeShowPendingConfetti();
 
             if(results.length === 0){
                 resultsContainer.textContent =
@@ -751,6 +1390,22 @@ function listenForRoundResults(){
 
                 resultsContainer.append(row);
             });
+        },
+        error=>{
+            if(gameCode === listeningGameCode &&
+               teamId === listeningTeamId){
+                const rewardDial =
+                    document.getElementById("rewardDial");
+                const rewardRollValue =
+                    document.getElementById("rewardRollValue");
+
+                rewardRollValue.textContent = "—";
+                rewardRollValue.dataset.outcome = "error";
+                rewardDial.setAttribute(
+                    "aria-label",
+                    `Unable to load reward result: ${error.message}`
+                );
+            }
         }
 
     );
@@ -784,6 +1439,7 @@ function listenForVoting(){
                 unsubscribeLegacyVote?.();
                 voteLoaded = false;
                 votedChoice = null;
+                updateRewardDial();
 
                 const listeningGameCode = gameCode;
                 const voteRoundIds = getVoteRoundIds(currentRound);
@@ -829,6 +1485,7 @@ function listenForVoting(){
                                     existingVotes[0]?.choice ?? null;
                                 updateVoteButtons();
                                 updateVoteStatus();
+                                updateRewardDial();
                             },
                             error=>{
                                 if(gameCode === listeningGameCode &&
@@ -846,6 +1503,7 @@ function listenForVoting(){
 
             updateVoteButtons();
             updateVoteStatus();
+            updateRewardDial();
         }
 
     );
@@ -887,6 +1545,23 @@ function stopCurrentGameListeners(){
     votingOpen = false;
     voteLoaded = false;
     votedChoice = null;
+    latestTeamResult = null;
+    currentTeamScore = null;
+    pendingScoreIncreaseConfetti = false;
+    confettiFallbackReady = false;
+
+    if(confettiFallbackTimer !== null){
+        window.clearTimeout(confettiFallbackTimer);
+        confettiFallbackTimer = null;
+    }
+
+    if(rewardNeedleAnimationTimer !== null){
+        window.clearTimeout(rewardNeedleAnimationTimer);
+        rewardNeedleAnimationTimer = null;
+    }
+
+    rewardNeedleAnimating = false;
+    updateRewardDial();
 }
 
 function updateVoteStatus(){
@@ -1040,6 +1715,7 @@ async function submitVote(event){
         if(votingGameCode === gameCode && voteResult.round === currentRound){
             votedChoice = choice;
             voteLoaded = true;
+            updateRewardDial();
         }
 
         showVoteStatus(

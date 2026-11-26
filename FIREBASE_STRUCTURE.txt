@@ -44,6 +44,8 @@ games (collection)
         teamId: team ID
         teamName: display name recorded for the result
         choice: selected expedition
+        roll: random value in [0, 1); Safe ignores the value and is guaranteed
+        rewardChance: reward threshold from 0 to 1 (Safe: 1)
         delta: points earned or lost
         score: team score after this result
         timestamp: milliseconds since epoch
@@ -70,7 +72,10 @@ results
   Stores the logged outcome for each team in each round. Results are separate
   from votes and are used for score/history displays. Result document IDs
   retain the unpadded format, such as round1_{teamId}; the document's round
-  field is numeric.
+  field is numeric. The roll and rewardChance fields let the team page show
+  the actual random roll against the reward threshold. Safe results record a
+  random roll for display, but Safe ignores it and always rewards. Older Safe
+  results may store null; historical results may omit these fields.
 
 Round IDs and compatibility
 ---------------------------
